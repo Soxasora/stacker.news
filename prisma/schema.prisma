@@ -141,6 +141,8 @@ model User {
   walletsUpdatedAt          DateTime?
   vaultEntries              VaultEntry[]         @relation("VaultEntries")
   proxyReceive              Boolean              @default(false)
+  lists                     List[]               @relation("UserLists")
+  favoriteLists             FavoriteList[]       @relation("UserFavoriteLists")
 
   @@index([photoId])
   @@index([createdAt], map: "users.created_at_index")
@@ -562,6 +564,7 @@ model Item {
   invoice             Invoice?              @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   PollBlindVote       PollBlindVote[]
   ItemUserAgg         ItemUserAgg[]
+  listItems           ListItem[]
 
   @@index([uploadId])
   @@index([lastZapAt])
@@ -1151,6 +1154,47 @@ model Reminder {
   item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@index([userId, remindAt], map: "Reminder.userId_reminderAt_index")
+}
+
+enum ListType {
+  PINNED_POSTS
+  BOOKMARKS
+  READ_LATER
+  GENERIC
+}
+
+model List {
+  id                        Int                @id @default(autoincrement())
+  name                      String
+  type                      ListType
+  user                      User               @relation("UserLists", fields: [userId], references: [id], onDelete: Cascade)
+  userId                    Int
+  listItems                 ListItem[]
+  favoritedBy               FavoriteList[]     @relation("ListFavoriteLists")
+
+  @@index([userId])
+}
+
+model ListItem {
+  id                        Int                @id @default(autoincrement())
+  list                      List               @relation(fields: [listId], references: [id], onDelete: Cascade)
+  listId                    Int
+  item                      Item               @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId                    Int
+
+  @@index([listId])
+  @@index([itemId])
+}
+
+model FavoriteList {
+  id                        Int                @id @default(autoincrement())
+  user                      User               @relation("UserFavoriteLists", fields: [userId], references: [id], onDelete: Cascade)
+  userId                    Int
+  list                      List               @relation("ListFavoriteLists", fields: [listId], references: [id], onDelete: Cascade)
+  listId                    Int
+
+  @@index([userId])
+  @@index([listId])
 }
 
 enum EarnType {
