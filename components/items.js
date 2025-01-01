@@ -38,8 +38,16 @@ export default function Items ({ ssrData, variables = DEFAULT_VARIABLES, query, 
         res.push(p)
       }
     })
-    return res
+
+    const uniqueItems = res.filter((item, index, self) =>
+      index === self.findIndex((t) => (
+        t.id === item.id
+      ))
+    )
+    return uniqueItems
   }, [pins, items])
+
+  console.log(itemsWithPins.filter(item => item.id === '455289'))
 
   const Skeleton = useCallback(() =>
     <ItemsSkeleton rank={rank} startRank={items?.length} limit={variables.limit} Footer={Foooter} />, [rank, items])

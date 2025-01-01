@@ -167,6 +167,7 @@ export default function ItemFull ({ item, bio, rank, ...props }) {
 
   return (
     <>
+      <p>${item} and ${rank}</p>
       {rank
         ? (
           <div className={`${itemStyles.rank} pt-2 align-self-start`}>
