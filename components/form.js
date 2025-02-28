@@ -971,6 +971,122 @@ export function Select ({ label, items, info, groupClassName, onChange, noForm, 
   )
 }
 
+// TODO: Remove clutter like handles
+// TODO: Prevent re-render on add territory
+// TODO: Better CSS
+export function MultiSelect ({ label, items, info, groupClassName, onChange, noForm, overrideValue, hint, ...props }) {
+  const [field, meta, helpers] = noForm ? [{}, {}, {}] : useField(props)
+  const formik = noForm ? null : useFormikContext()
+  const invalid = meta.touched && meta.error
+  const [selectedItems, setSelectedItems] = useState([field.value] || [])
+  console.log('selectedItems', selectedItems)
+
+  useEffect(() => {
+    if (overrideValue) {
+      !noForm && helpers.setValue(overrideValue)
+      setSelectedItems(overrideValue)
+    }
+  }, [overrideValue, helpers])
+
+  const handleItemSelect = (item) => {
+    if (!selectedItems.includes(item)) {
+      const newSelectedItems = [...selectedItems, item]
+      setSelectedItems(newSelectedItems)
+      !noForm && helpers.setValue(newSelectedItems)
+      onChange && onChange(formik, { target: { value: newSelectedItems } })
+    }
+  }
+
+  const handleItemRemove = (item) => {
+    const newSelectedItems = selectedItems.filter((i) => i !== item)
+    setSelectedItems(newSelectedItems)
+    !noForm && helpers.setValue(newSelectedItems)
+    onChange && onChange(formik, { target: { value: newSelectedItems } })
+  }
+
+  const handleClearAll = () => {
+    setSelectedItems([])
+    !noForm && helpers.setValue([])
+    onChange && onChange(formik, { target: { value: [] } })
+  }
+
+  return (
+    <FormGroup label={label} className={groupClassName}>
+      <div className='my-1'>
+        <Dropdown className='pointer' as='div'>
+          <Dropdown.Toggle
+            as='div'
+            onPointerDown={e => e.preventDefault()}
+            className={`d-flex align-items-center justify-content-between text-wrap p-2 form-select form-select-sm border-0 ${styles.multiSelect} ${invalid ? 'border-danger' : ''}`}
+            style={{ backgroundColor: 'var(--theme-clickToContextColor)', borderRadius: '0.4rem', fontWeight: '700', fontSize: '0.7875rem', color: 'var(--theme-dropdownItemColor)' }}
+          >
+            <div className='d-flex flex-row flex-wrap gap-2'>
+              {selectedItems && selectedItems.length > 0
+                ? selectedItems.map((item) => (
+                  <span key={item} className={`border-0 d-flex align-items-center gap-1 ${styles.multiSelect}`}>
+                    {item}
+                    <button
+                      type='button'
+                      className={`${styles.multiSelectRemove}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleItemRemove(item)
+                      }}
+                    >
+                      <CloseIcon className={styles.multiSelectRemoveIcon} />
+                    </button>
+                  </span>
+                ))
+                : (
+                  <span className='text-muted'>select</span>
+                  )}
+            </div>
+            {selectedItems && selectedItems.length > 0 && (
+              <button
+                type='button'
+                className={`d-flex align-items-center justify-content-center mx-4 ${styles.multiSelectRemoveAll}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleClearAll()
+                }}
+              >
+                <CloseIcon className={styles.multiSelectRemoveAllIcon} />
+              </button>
+            )}
+          </Dropdown.Toggle>
+          <Dropdown.Menu style={{ maxHeight: '15rem', overflowY: 'auto' }}>
+            {items.map(item => {
+              if (item && typeof item === 'object') {
+                return null
+              } else {
+                const isSelected = selectedItems && selectedItems.includes(item)
+                return (
+                  <Dropdown.Item
+                    key={item}
+                    onClick={() => handleItemSelect(item)}
+                    className='d-flex flex-row justify-content-between'
+                    active={isSelected}
+                    disabled={isSelected}
+                  >
+                    {item}
+                  </Dropdown.Item>
+                )
+              }
+            })}
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
+      <BootstrapForm.Control.Feedback type='invalid'>
+        {meta.touched && meta.error}
+      </BootstrapForm.Control.Feedback>
+      {hint &&
+        <BootstrapForm.Text>
+          {hint}
+        </BootstrapForm.Text>}
+    </FormGroup>
+  )
+}
+
 function DatePickerSkeleton () {
   return (
     <div className='react-datepicker-wrapper'>

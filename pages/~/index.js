@@ -7,15 +7,26 @@ import Snl from '@/components/snl'
 import { useQuery } from '@apollo/client'
 import PageLoading from '@/components/page-loading'
 import TerritoryHeader from '@/components/territory-header'
+import { MultiSubSelect } from '@/components/sub-select'
+
+// TODO: Fix the other pages
 
 export const getServerSideProps = getGetServerSideProps({
   query: SUB_ITEMS,
+  variables: (query) => ({
+    ...query,
+    sub: query.sub ? [...new Set(query.sub.split('+'))] : null
+  }),
   notFound: (data, vars) => vars.sub && !data.sub
 })
 
 export default function Sub ({ ssrData }) {
   const router = useRouter()
-  const variables = { ...router.query }
+  const multiSub = router.query.sub ? [...new Set(router.query.sub.split('+'))] : null
+  const variables = {
+    ...router.query,
+    sub: multiSub
+  }
   const { data } = useQuery(SUB_FULL, { variables })
 
   if (!data && !ssrData) return <PageLoading />
@@ -23,10 +34,16 @@ export default function Sub ({ ssrData }) {
 
   return (
     <Layout sub={sub?.name}>
-      {sub
+      {sub && (multiSub?.length === 1)
         ? <TerritoryHeader sub={sub} />
         : (
           <>
+            {multiSub?.length > 1 && (
+              <MultiSubSelect
+                sub={multiSub} noForm
+                groupClassName='mb-0' size='medium'
+              />
+            )}
             <Snl />
           </>)}
       <Items ssrData={ssrData} variables={variables} />

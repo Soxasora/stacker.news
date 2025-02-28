@@ -279,7 +279,7 @@ const subClause = (sub, num, table = 'Item', me, showNsfw) => {
   // Intentionally show nsfw posts (i.e. no nsfw clause) when viewing a specific nsfw sub
   if (sub) {
     const tables = [...new Set(['Item', table])].map(t => `"${t}".`)
-    return `(${tables.map(t => `${t}"subName" = $${num}::CITEXT`).join(' OR ')})`
+    return `(${tables.map(t => `${t}"subName" = ANY ($${num}::CITEXT[])`).join(' OR ')})`
   }
 
   if (!me) { return HIDE_NSFW_CLAUSE }
@@ -508,8 +508,9 @@ export default {
           break
         default:
           // sub so we know the default ranking
+          // TODO: handle multiple territories
           if (sub) {
-            subFull = await models.sub.findUnique({ where: { name: sub } })
+            subFull = await models.sub.findUnique({ where: { name: sub[0] } })
           }
 
           switch (subFull?.rankingType) {
@@ -557,7 +558,7 @@ export default {
                       ${whereClause(
                         '"pinId" IS NOT NULL',
                         '"parentId" IS NULL',
-                        sub ? '"subName" = $1' : '"subName" IS NULL',
+                        sub ? '"subName" = ANY ($1::CITEXT[])' : '"subName" IS NULL',
                         muteClause(me))}
                   ) rank_filter WHERE RANK = 1
                   ORDER BY position ASC`,

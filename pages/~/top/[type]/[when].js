@@ -8,7 +8,8 @@ import { COMMENT_TYPE_QUERY } from '@/lib/constants'
 
 const staticVariables = { sort: 'top' }
 const variablesFunc = vars => {
-  return ({ includeComments: COMMENT_TYPE_QUERY.includes(vars.type), ...staticVariables, ...vars })
+  const sub = vars?.sub ? [...new Set(vars.sub.split('+'))] : null
+  return ({ includeComments: COMMENT_TYPE_QUERY.includes(vars.type), ...staticVariables, ...vars, sub })
 }
 export const getServerSideProps = getGetServerSideProps({
   query: SUB_ITEMS,
