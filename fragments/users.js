@@ -324,7 +324,7 @@ export const USER_WITH_ITEMS = gql`
   ${USER_FIELDS}
   ${ITEM_FIELDS}
   ${COMMENTS_ITEM_EXT_FIELDS}
-  query UserWithItems($name: String!, $sub: String, $cursor: String, $type: String, $when: String, $from: String, $to: String, $by: String, $limit: Limit, $includeComments: Boolean = false) {
+  query UserWithItems($name: String!, $sub: [String], $cursor: String, $type: String, $when: String, $from: String, $to: String, $by: String, $limit: Limit, $includeComments: Boolean = false) {
     user(name: $name) {
       ...UserFields
     }

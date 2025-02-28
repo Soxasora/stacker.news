@@ -2,6 +2,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis !important;
+  width: 50%;
 }
 
 .subSelectSmall {
@@ -14,4 +15,26 @@
 
 .subSelectMedium {
   width: 200px !important;
+}
+
+.horizontalScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.horizontalScroll :global(.selected-items) {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.horizontalScroll :global(.selected-items::-webkit-scrollbar) {
+  height: 4px;
+}
+
+.horizontalScroll :global(.selected-items::-webkit-scrollbar-thumb) {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
 }

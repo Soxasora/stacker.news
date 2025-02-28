@@ -5,8 +5,10 @@ import { SUB_ITEMS } from '@/fragments/subs'
 import { useRouter } from 'next/router'
 
 const staticVariables = { sort: 'random' }
-const variablesFunc = vars =>
-  ({ ...staticVariables, ...vars })
+const variablesFunc = vars => {
+  const sub = vars?.sub ? [...new Set(vars.sub.split('+'))] : null
+  return ({ ...staticVariables, ...vars, sub })
+}
 export const getServerSideProps = getGetServerSideProps({
   query: SUB_ITEMS,
   variables: variablesFunc,

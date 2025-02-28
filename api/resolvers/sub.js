@@ -9,9 +9,10 @@ import { GqlAuthenticationError, GqlInputError } from '@/lib/error'
 export async function getSub (parent, { name }, { models, me }) {
   if (!name) return null
 
+  // TODO: handle multiple territories
   return await models.sub.findUnique({
     where: {
-      name
+      name: name[0]
     },
     ...(me
       ? {

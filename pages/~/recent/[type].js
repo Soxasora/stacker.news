@@ -17,11 +17,14 @@ function variablesFunc (vars) {
     type = 'bounties_active'
   }
 
+  const sub = vars?.sub ? [...new Set(vars.sub.split('+'))] : null
+
   return ({
     includeComments: COMMENT_TYPE_QUERY.includes(vars.type),
     ...staticVariables,
     ...vars,
-    type
+    type,
+    sub
   })
 }
 
@@ -33,6 +36,7 @@ export const getServerSideProps = getGetServerSideProps({
 
 export default function Index ({ ssrData }) {
   const router = useRouter()
+  const multiSub = router.query.sub ? [...new Set(router.query.sub.split('+'))] : null
   const variables = variablesFunc(router.query)
   const { data } = useQuery(SUB_FULL, { variables })
 
@@ -40,7 +44,7 @@ export default function Index ({ ssrData }) {
   const { sub } = data || ssrData
 
   return (
-    <Layout sub={sub?.name}>
+    <Layout sub={multiSub}>
       <RecentHeader sub={sub} />
       <Items
         ssrData={ssrData}

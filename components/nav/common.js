@@ -5,7 +5,7 @@ import { useRouter } from 'next/router'
 import BackArrow from '../../svgs/arrow-left-line.svg'
 import { useCallback, useEffect, useState } from 'react'
 import Price from '../price'
-import SubSelect from '../sub-select'
+import SubSelect, { MultiSubSelect } from '../sub-select'
 import { USER_ID } from '../../lib/constants'
 import Head from 'next/head'
 import NoteIcon from '../../svgs/notification-4-fill.svg'
@@ -25,6 +25,7 @@ import { useWallets } from '@/wallets/index'
 import SwitchAccountList, { useAccounts } from '@/components/account'
 import { useShowModal } from '@/components/modal'
 import { numWithUnits } from '@/lib/format'
+
 export function Brand ({ className }) {
   return (
     <Link href='/' passHref legacyBehavior>
@@ -103,8 +104,8 @@ export function NavPrice ({ className }) {
 
 const PREPEND_SUBS = ['home']
 const APPEND_SUBS = [{ label: '--------', items: ['create'] }]
-export function NavSelect ({ sub: subName, className, size }) {
-  const sub = subName || 'home'
+export function NavSelect ({ sub: subName, multi, className, size }) {
+  const sub = multi ? 'custom' : subName || 'home'
 
   return (
     <Nav.Item className={className}>
