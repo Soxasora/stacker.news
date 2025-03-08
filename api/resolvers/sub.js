@@ -310,6 +310,11 @@ export default {
 
       return sub.SubSubscription?.length > 0
     },
+    customDomain: async (sub, args, { models }) => {
+      // TODO: remove this
+      console.log(Object.keys(models))
+      return models.customDomain.findUnique({ where: { subName: sub.name } })
+    },
     createdAt: sub => sub.createdAt || sub.created_at
   }
 }
