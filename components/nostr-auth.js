@@ -33,7 +33,7 @@ function NostrError ({ message }) {
   )
 }
 
-export function NostrAuth ({ text, callbackUrl, multiAuth }) {
+export function NostrAuth ({ text, callbackUrl, multiAuth, signup }) {
   const [status, setStatus] = useState({
     msg: '',
     error: false,
@@ -158,7 +158,8 @@ export function NostrAuth ({ text, callbackUrl, multiAuth }) {
       await signIn('nostr', {
         event: JSON.stringify(signedEvent),
         callbackUrl,
-        multiAuth
+        multiAuth,
+        signup
       })
     } catch (e) {
       setError(e)
@@ -327,10 +328,10 @@ function NostrExplainer ({ text, children }) {
   )
 }
 
-export function NostrAuthWithExplainer ({ text, callbackUrl, multiAuth }) {
+export function NostrAuthWithExplainer ({ text, callbackUrl, multiAuth, signup }) {
   return (
     <NostrExplainer text={text}>
-      <NostrAuth text={text} callbackUrl={callbackUrl} multiAuth={multiAuth} />
+      <NostrAuth text={text} callbackUrl={callbackUrl} multiAuth={multiAuth} signup={signup} />
     </NostrExplainer>
   )
 }

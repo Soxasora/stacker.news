@@ -176,7 +176,7 @@ function setMultiAuthCookies (req, res, { id, jwt, name, photoId }) {
 }
 
 async function pubkeyAuth (credentials, req, res, pubkeyColumnName) {
-  const { k1, pubkey } = credentials
+  const { k1, pubkey, signup } = credentials
 
   // are we trying to add a new account for switching between?
   const multiAuth = typeof req.body.multiAuth === 'string' ? req.body.multiAuth === 'true' : !!req.body.multiAuth
@@ -205,8 +205,12 @@ async function pubkeyAuth (credentials, req, res, pubkeyColumnName) {
         if (token?.id && !multiAuth) {
           user = await prisma.user.update({ where: { id: token.id }, data: { [pubkeyColumnName]: pubkey } })
         } else {
-          // we're not logged in: create new user with that pubkey
-          user = await prisma.user.create({ data: { name: pubkey.slice(0, 10), [pubkeyColumnName]: pubkey } })
+          // if we're not logged in and we're not trying to sign up, return null preventing account creation
+          if (signup) {
+            user = await prisma.user.create({ data: { name: pubkey.slice(0, 10), [pubkeyColumnName]: pubkey } })
+          } else {
+            return null
+          }
         }
       }
 
