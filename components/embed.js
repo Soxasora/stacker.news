@@ -211,6 +211,23 @@ const Embed = memo(function Embed ({ src, provider, id, meta, className, topLeve
     )
   }
 
+  if (provider === 'tiktok') {
+    return (
+      <div className={classNames(styles.tiktokWrapper, className)}>
+        <div className={classNames(styles.videoContainer, styles.tiktokContainer, show && styles.tiktokContainerFull)}>
+          <iframe
+            title='TikTok Video'
+            src={`https://www.tiktok.com/embed/v2/${id}`}
+          />
+        </div>
+        {!show &&
+          <Button size='lg' variant='info' className={styles.twitterShowFull} onClick={() => setShow(true)}>
+            show full tiktok
+          </Button>}
+      </div>
+    )
+  }
+
   return null
 })
 

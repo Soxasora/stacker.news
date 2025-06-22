@@ -318,7 +318,7 @@
     font-size: smaller;
 }
 
-.twitterContainer, .nostrContainer, .videoWrapper, .wavlakeWrapper, .spotifyWrapper {
+.twitterContainer, .nostrContainer, .videoWrapper, .wavlakeWrapper, .spotifyWrapper, .tiktokWrapper {
     margin-top: calc(var(--grid-gap) * 0.5);
     margin-bottom: calc(var(--grid-gap) * 0.5);
     background-color: var(--theme-bg);
@@ -448,4 +448,19 @@
     max-width: 480px;
     border-radius: 13px;
     overflow: hidden;
+}
+
+.tiktokWrapper {
+    width: 100%;
+    max-width: 320px;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.tiktokContainer {
+    margin-top: -1px;
+}
+
+.tiktokContainerFull {
+    height: 724px;
 }
