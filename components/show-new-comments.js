@@ -74,6 +74,7 @@ function traverseNewComments (client, item, onLevel, threadComment = false, curr
   // if we're at the depth limit, stop traversing, we've reached the bottom of the visible thread
   if (currentDepth >= COMMENT_DEPTH_LIMIT) return
 
+  // new comments of new comments
   if (item.newComments && item.newComments.length > 0) {
     const dedupedNewComments = dedupeNewComments(item.newComments, item.comments?.comments)
 
@@ -92,9 +93,8 @@ function traverseNewComments (client, item, onLevel, threadComment = false, curr
     }
   }
 
-  // if we're showing all new comments of a thread
-  // we consider every child comment recursively
-  if (threadComment && item.comments?.comments) {
+  // new comments of existing comments
+  if (item.comments?.comments) {
     for (const child of item.comments.comments) {
       traverseNewComments(client, child, onLevel, threadComment, currentDepth + 1)
     }
