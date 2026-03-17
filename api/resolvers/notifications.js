@@ -545,13 +545,13 @@ export default {
       let html = null
       try {
         if (bulletin.text) {
-          lexicalState = await lexicalStateLoader.load({ text: bulletin.text })
+          lexicalState = await lexicalStateLoader.load({ text: bulletin.text, entityId: `bulletin:${bulletin.id}` })
           if (lexicalState) {
-            html = await lexicalHTMLGenerator(lexicalState)
+            html = await lexicalHTMLGenerator(lexicalState, { entityId: `bulletin:${bulletin.id}` })
           }
         }
       } catch (error) {
-        console.error('error generating HTML from Lexical State:', error)
+        console.error(`error generating HTML from Lexical State [entity:bulletin:${bulletin.id}]:`, error)
         lexicalState = null
         html = null
       }

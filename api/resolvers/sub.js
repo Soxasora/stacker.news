@@ -376,16 +376,16 @@ export default {
     createdAt: sub => sub.createdAt || sub.created_at,
     lexicalState: async (sub, args, { lexicalStateLoader }) => {
       if (!sub.desc) return null
-      return lexicalStateLoader.load({ text: sub.desc })
+      return lexicalStateLoader.load({ text: sub.desc, entityId: `sub:${sub.name}` })
     },
     html: async (sub, args, { lexicalStateLoader }) => {
       if (!sub.desc) return null
       try {
-        const lexicalState = await lexicalStateLoader.load({ text: sub.desc })
+        const lexicalState = await lexicalStateLoader.load({ text: sub.desc, entityId: `sub:${sub.name}` })
         if (!lexicalState) return null
-        return lexicalHTMLGenerator(lexicalState)
+        return lexicalHTMLGenerator(lexicalState, { entityId: `sub:${sub.name}` })
       } catch (error) {
-        console.error('error generating HTML from Lexical State:', error)
+        console.error(`error generating HTML from Lexical State [entity:sub:${sub.name}]:`, error)
         return null
       }
     }

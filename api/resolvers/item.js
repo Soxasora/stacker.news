@@ -1378,6 +1378,7 @@ export default {
       if (!item.text) return null
       return lexicalStateLoader.load({
         text: item.text,
+        entityId: `item:${item.id}`,
         context: {
           imgproxyUrls: item.imgproxyUrls,
           rel: item.rel,
@@ -1392,6 +1393,7 @@ export default {
       try {
         const lexicalState = await lexicalStateLoader.load({
           text: item.text,
+          entityId: `item:${item.id}`,
           context: {
             imgproxyUrls: item.imgproxyUrls,
             rel: item.rel,
@@ -1401,9 +1403,9 @@ export default {
           }
         })
         if (!lexicalState) return null
-        return lexicalHTMLGenerator(lexicalState)
+        return lexicalHTMLGenerator(lexicalState, { entityId: `item:${item.id}` })
       } catch (error) {
-        console.error('error generating HTML from Lexical State:', error)
+        console.error(`error generating HTML from Lexical State [entity:item:${item.id}]:`, error)
         return null
       }
     }
