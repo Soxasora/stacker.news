@@ -6,6 +6,7 @@ import { SN_MAIN_DOMAIN } from '@/lib/domains'
 import { formatHost, parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
 import { VERIFICATION_TOKEN_EXPIRY_MS, AUTH_SYNC_TOKEN_TAG } from '@/lib/constants'
 import { multiAuthMiddleware } from '@/lib/auth'
+import { verifyAuthSyncProof, AUTH_SYNC_PROOF_HEADER } from '@/lib/domains/auth-sync'
 
 export default async function handler (req, res) {
   try {
@@ -14,6 +15,17 @@ export default async function handler (req, res) {
       const parsedDomain = parseSafeHost(domainName)
       if (!verificationToken || !parsedDomain) {
         return res.status(400).json({ status: 'ERROR', reason: 'verification token and domain name are required' })
+      }
+
+      // verify the request came from our own middleware via proof header
+      const validProof = verifyAuthSyncProof({
+        received: req.headers[AUTH_SYNC_PROOF_HEADER],
+        verificationToken,
+        domainName: parsedDomain.hostname,
+        secret: process.env.NEXTAUTH_SECRET
+      })
+      if (!validProof) {
+        return res.status(401).json({ status: 'ERROR', reason: 'invalid proof' })
       }
 
       const domainValidation = await checkDomainValidity(parsedDomain.hostname)

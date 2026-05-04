@@ -1,6 +1,7 @@
 import 'urlpattern-polyfill'
 import { NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE, cookieOptions } from '@/lib/auth'
+import { createAuthSyncProof, AUTH_SYNC_PROOF_HEADER } from '@/lib/domains/auth-sync'
 import { getDomainMapping, createDomainsDebugLogger, SN_MAIN_DOMAIN } from '@/lib/domains'
 import { parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
 
@@ -101,9 +102,16 @@ async function syncAccount (request, searchParams, domain, headers) {
   }
 
   try {
+    const proof = createAuthSyncProof({
+      verificationToken: token,
+      domainName,
+      secret: process.env.NEXTAUTH_SECRET
+    })
+
     const body = JSON.stringify({ verificationToken: token, domainName })
     const fetchHeaders = new Headers(headers)
     fetchHeaders.set('Content-Type', 'application/json')
+    fetchHeaders.set(AUTH_SYNC_PROOF_HEADER, proof)
 
     const response = await fetch(`${SN_MAIN_DOMAIN.origin}/api/auth/sync`, {
       method: 'POST',

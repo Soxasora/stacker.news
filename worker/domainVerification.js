@@ -10,7 +10,7 @@ import {
   deleteDomainCertificate,
   detachDomainCertificate,
   ACM_TERMINAL_FAILED_STATUSES
-} from '@/lib/domain-verification'
+} from '@/lib/domains/verification'
 import {
   DOMAIN_HOLD_RETENTION_DAYS,
   DOMAIN_VERIFICATION_HOLD_AFTER_DAYS,
