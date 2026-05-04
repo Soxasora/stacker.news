@@ -9,11 +9,6 @@ import { formatHost, parseSafeHost } from '@/lib/safe-url'
 import { MULTI_AUTH_ANON, MULTI_AUTH_POINTER } from '@/lib/auth'
 import { getDomainMapping } from '@/lib/domains'
 
-// callbackUrl arriving at /login is expected to be same-origin: custom-domain
-// auth flows are funneled through /api/auth/redirect, which wraps the user's
-// destination into a /api/auth/sync URL on the main domain. anything else is a
-// stale link or someone trying an open redirect, so we collapse it to '/'.
-
 export async function getServerSideProps ({ req, res, query: { callbackUrl, multiAuth = false, domain = null, error = null } }) {
   // the ?domain= query param carries the custom domain's host as-is (with its port in local dev).
   // we pass the port alongside the mapping so the client can redirect back through /api/auth/sync

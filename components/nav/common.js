@@ -23,6 +23,7 @@ import SwitchAccountList, { nextAccount, useAccounts, useIsLurker } from '@/comp
 import { useShowModal } from '@/components/modal'
 import { ObstacleButtons } from '@/components/obstacle'
 import { numWithUnits } from '@/lib/format'
+
 export function Brand ({ className }) {
   return (
     <Navbar.Brand as={Link} href='/' className={classNames(styles.brand, className)}>
