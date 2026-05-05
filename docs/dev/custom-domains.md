@@ -219,6 +219,22 @@ Instead of fighting these restrictions, Auth Sync works with them by creating a 
 
 The verification token is a one-time code that dies in **5 minutes** and has **256 bits** of entropy. The JWT is then generated server-side and applied to the final middleware response.
 
+### CSRF gate on `GET /api/auth/sync`
+
+`GET /api/auth/sync` mints a `{userId, domainId}`-bound verification token as soon as it sees a valid main-domain session. The session cookie is `SameSite=lax`, so a single-click top-level navigation (`<a href="https://stacker.news/api/auth/sync?domain=…&redirectUri=/">`) carries it. Without an additional check, any owner of an `ACTIVE` custom domain could lure a logged-in stacker to that link and silently mint them a custom-domain session for that territory — bypassing the consent gate that [pages/login.js](../../pages/login.js) enforces, where `domainData` nullifies the session and forces the stacker to interactively log in to the territory.
+
+To close this CSRF, the GET handler additionally requires a short-lived HMAC proof bound to the destination `domainName`:
+
+- **Mint side** — `createLoginFlowProof` in [lib/domains/auth-sync.js](../../lib/domains/auth-sync.js), called from `redirectToAuth` in [proxy.js](../../proxy.js) whenever the custom-domain proxy intercepts a `/login` or `/signup` on a custom domain. The proof is keyed by `NEXTAUTH_SECRET`, scoped to the custom domain's hostname, and expires in **10 minutes**. long enough to cover every login flow, for comparison, email magic link only lasts 5 minutes.
+- **Carriage** — the proof stays in the URL as you are redirected from the proxy, to `/api/auth/redirect`, then `/login`, then `/api/auth/callback/<provider>` (if applicable), and finally to `/api/auth/sync`.
+- **Verify side** — `verifyLoginFlowProof` in [pages/api/auth/sync.js](../../pages/api/auth/sync.js) GET. A missing/invalid proof is not an error: the handler calls `handleNoSession`, which redirects to `https://<custom-domain>/login` (or `/signup`). That request hits the custom-domain proxy again, which mints a **fresh** proof and re-enters the chain. `/login` then nullifies the session for active custom domains and forces an interactive sign-in with the destination domain visible in the page header, turning the CSRF into a phishing problem the stacker can recognize.
+
+The crucial property of this design is that the proof can **only** be minted by code running inside our own edge proxy. An attacker who controls a custom domain doesn't run our proxy, their DNS just CNAMEs to our load balancer, so they cannot forge the proof. They can only trigger the legitimate flow, which lands the stacker on `/login` with the territory name plainly visible.
+
+The legitimate flow is unaffected: every legitimate sync starts at the custom domain's `/login` link, so the proxy mints the proof on the very first hop and the stacker signs in once. Only synthetic direct hits to `/api/auth/sync` (or to `/api/auth/redirect` outside the proxy) take the extra bounce.
+
+The proof is bound to `domainName` so it cannot be replayed against a different territory, bound to a wall-clock `expiration` so it cannot be replayed past its TTL, and carries no secrets so it is safe in the URL. Note that the proof never grants access on its own: the user must still authenticate, so the longer TTL is not a meaningful additional attack surface.
+
 ### Redirect callback allowlist
 
 NextAuth still owns the final `callbackUrl` redirect after login. [pages/api/auth/[...nextauth].js](../../pages/api/auth/[...nextauth].js)'s `redirect` callback allows:

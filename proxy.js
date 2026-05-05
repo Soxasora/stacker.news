@@ -1,7 +1,14 @@
 import 'urlpattern-polyfill'
 import { NextRequest, NextResponse } from 'next/server'
 import { SESSION_COOKIE, cookieOptions } from '@/lib/auth'
-import { createAuthSyncProof, AUTH_SYNC_PROOF_HEADER } from '@/lib/domains/auth-sync'
+import {
+  createAuthSyncProof,
+  createLoginFlowProof,
+  AUTH_SYNC_PROOF_HEADER,
+  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM,
+  AUTH_SYNC_LOGIN_FLOW_EXP_PARAM,
+  AUTH_SYNC_LOGIN_FLOW_TTL_MS
+} from '@/lib/domains/auth-sync'
 import { getDomainMapping, createDomainsDebugLogger, SN_MAIN_DOMAIN } from '@/lib/domains'
 import { parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
 
@@ -85,6 +92,22 @@ async function redirectToAuth (searchParams, domain, signup) {
 
   if (searchParams.has('callbackUrl')) {
     loginUrl.searchParams.set('callbackUrl', searchParams.get('callbackUrl'))
+  }
+
+  // CSRF, mint a short-lived HMAC proof bound to the custom domain's hostname.
+  // since only this proxy can mint it, an attacker who lures a logged-in stacker straight to
+  // /api/auth/sync ends up bounced back here through the custom domain's
+  // /login, forcing an interactive sign-in
+  const parsedDomain = parseSafeHost(domain)
+  if (parsedDomain) {
+    const expiration = String(Date.now() + AUTH_SYNC_LOGIN_FLOW_TTL_MS)
+    const proof = createLoginFlowProof({
+      domainName: parsedDomain.hostname,
+      expiration,
+      secret: process.env.NEXTAUTH_SECRET
+    })
+    loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM, proof)
+    loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_EXP_PARAM, expiration)
   }
 
   return NextResponse.redirect(loginUrl)

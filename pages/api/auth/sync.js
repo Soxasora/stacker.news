@@ -6,7 +6,13 @@ import { SN_MAIN_DOMAIN } from '@/lib/domains'
 import { formatHost, parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
 import { VERIFICATION_TOKEN_EXPIRY_MS, AUTH_SYNC_TOKEN_TAG } from '@/lib/constants'
 import { multiAuthMiddleware } from '@/lib/auth'
-import { verifyAuthSyncProof, AUTH_SYNC_PROOF_HEADER } from '@/lib/domains/auth-sync'
+import {
+  verifyAuthSyncProof,
+  verifyLoginFlowProof,
+  AUTH_SYNC_PROOF_HEADER,
+  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM,
+  AUTH_SYNC_LOGIN_FLOW_EXP_PARAM
+} from '@/lib/domains/auth-sync'
 
 export default async function handler (req, res) {
   try {
@@ -71,6 +77,18 @@ export default async function handler (req, res) {
         return handleNoSession(res, canonicalDomain, redirectUri)
       }
 
+      // CSRF gate, the proof is minted by the custom-domain proxy in proxy.js when it intercepts /login or /signup
+      // making sure that the request came from an intentional user action, not an attacker.
+      const validProof = verifyLoginFlowProof({
+        received: req.query[AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM],
+        expiration: req.query[AUTH_SYNC_LOGIN_FLOW_EXP_PARAM],
+        domainName: parsedDomain.hostname,
+        secret: process.env.NEXTAUTH_SECRET
+      })
+      if (!validProof) {
+        return handleNoSession(res, canonicalDomain, redirectUri)
+      }
+
       const newVerificationToken = await createVerificationToken(sessionToken, domainValidation.domainId)
       if (newVerificationToken.status === 'ERROR') {
         return res.status(500).json(newVerificationToken)
@@ -103,15 +121,19 @@ async function checkDomainValidity (receivedDomain) {
 }
 
 function handleNoSession (res, domainName, redirectUri, signup = false) {
-  const syncUrl = new URL('/api/auth/sync', SN_MAIN_DOMAIN)
-  syncUrl.searchParams.set('domain', domainName)
-  syncUrl.searchParams.set('redirectUri', redirectUri)
+  // bounce to /login (or /signup) on the *custom* domain, not the main one,
+  // so the request passes through the custom-domain proxy.
+  // the proxy will then redirect back to /api/auth/redirect
+  // that will attach a fresh proof and the required custom domain data
+  const customDomainLoginUrl = new URL(
+    signup ? '/signup' : '/login',
+    `${SN_MAIN_DOMAIN.protocol}//${domainName}`
+  )
+  if (redirectUri) {
+    customDomainLoginUrl.searchParams.set('callbackUrl', redirectUri)
+  }
 
-  const loginRedirectUrl = new URL(signup ? '/signup' : '/login', SN_MAIN_DOMAIN)
-  loginRedirectUrl.searchParams.set('domain', domainName)
-  loginRedirectUrl.searchParams.set('callbackUrl', syncUrl.href)
-
-  res.redirect(302, loginRedirectUrl.href)
+  res.redirect(302, customDomainLoginUrl.href)
 }
 
 async function createVerificationToken (token, domainId) {

@@ -1,5 +1,9 @@
 import { SN_MAIN_DOMAIN, getDomainMapping } from '@/lib/domains'
 import { formatHost, parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
+import {
+  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM,
+  AUTH_SYNC_LOGIN_FLOW_EXP_PARAM
+} from '@/lib/domains/auth-sync'
 
 // auth redirect for custom domains
 // redirects to /login or /signup on the main domain,
@@ -20,11 +24,22 @@ export default async function handler (req, res) {
   const canonicalDomain = formatHost(parsedDomain)
   const redirectUri = safeRedirectPath(callbackUrl, canonicalDomain)
 
-  const syncPath = `/api/auth/sync?domain=${encodeURIComponent(canonicalDomain)}&redirectUri=${encodeURIComponent(redirectUri)}`
+  const syncUrl = new URL('/api/auth/sync', SN_MAIN_DOMAIN)
+  syncUrl.searchParams.set('domain', canonicalDomain)
+  syncUrl.searchParams.set('redirectUri', redirectUri)
+
+  // forward the proxy-minted CSRF proof so it survives the redirect chain
+  // and reaches the sync GET verifier intact.
+  const proof = req.query[AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM]
+  const exp = req.query[AUTH_SYNC_LOGIN_FLOW_EXP_PARAM]
+  if (typeof proof === 'string' && typeof exp === 'string') {
+    syncUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM, proof)
+    syncUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_EXP_PARAM, exp)
+  }
 
   const loginUrl = new URL(signup ? '/signup' : '/login', SN_MAIN_DOMAIN)
   loginUrl.searchParams.set('domain', canonicalDomain)
-  loginUrl.searchParams.set('callbackUrl', syncPath)
+  loginUrl.searchParams.set('callbackUrl', syncUrl.pathname + syncUrl.search)
 
   res.redirect(302, loginUrl.href)
 }
