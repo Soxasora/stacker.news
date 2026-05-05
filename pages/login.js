@@ -29,13 +29,15 @@ export async function getServerSideProps ({ req, res, query: { callbackUrl, mult
 
   // prevent open redirects. See https://github.com/stackernews/stacker.news/issues/264
   // let undefined urls through without redirect ... otherwise this interferes with multiple auth linking
-  if (callbackUrl) {
-    try {
-      if (isExternal(decodeURIComponent(callbackUrl))) callbackUrl = '/'
-    } catch (err) {
-      console.error('error decoding callback:', callbackUrl, err)
-      callbackUrl = '/'
-    }
+  let external = true
+  try {
+    external = isExternal(decodeURIComponent(callbackUrl))
+  } catch (err) {
+    console.error('error decoding callback:', callbackUrl, err)
+  }
+
+  if (external) {
+    callbackUrl = '/'
   }
 
   if (session && callbackUrl && !multiAuth) {
