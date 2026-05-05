@@ -28,17 +28,17 @@ export default async function handler (req, res) {
         return res.status(401).json({ status: 'ERROR', reason: 'invalid proof' })
       }
 
-      const domainValidation = await checkDomainValidity(parsedDomain.hostname)
-      if (domainValidation.status === 'ERROR') {
-        return res.status(400).json(domainValidation)
-      }
-
-      const verificationResult = await consumeVerificationToken(verificationToken, domainValidation.domainId)
+      const verificationResult = await consumeVerificationToken(verificationToken, parsedDomain.hostname)
       if (verificationResult.status === 'ERROR') {
         return res.status(400).json(verificationResult)
       }
 
-      const sessionTokenResult = await createSessionToken(parsedDomain.hostname, verificationResult.userId)
+      const sessionTokenResult = await createSessionToken({
+        userId: verificationResult.userId,
+        domainName: parsedDomain.hostname,
+        domainId: verificationResult.domainId,
+        tokenVersion: verificationResult.tokenVersion
+      })
       if (sessionTokenResult.status === 'ERROR') {
         return res.status(500).json(sessionTokenResult)
       }
@@ -144,52 +144,57 @@ function redirectToDomain (res, domain, verificationToken, redirectUri) {
   }
 }
 
-async function consumeVerificationToken (verificationToken, expectedDomainId) {
+async function consumeVerificationToken (verificationToken, expectedDomainName) {
   try {
-    const userId = await models.$transaction(async tx => {
-      const token = await tx.verificationToken.findFirst({
-        where: {
-          token: verificationToken,
-          expires: { gt: new Date() }
-        }
+    await validateSchema(customDomainSchema, { domainName: expectedDomainName })
+
+    const result = await models.$transaction(async tx => {
+      // lock the Domain row in order to avoid minting a session against a stale tokenVersion.
+      const domains = await tx.$queryRaw`
+        SELECT id, "tokenVersion"
+        FROM "Domain"
+        WHERE "domainName" = ${expectedDomainName}
+          AND status = 'ACTIVE'
+        FOR UPDATE
+      `
+      const domain = domains[0]
+      if (!domain) throw new Error('domain not allowed')
+
+      const token = await tx.verificationToken.findUnique({
+        where: { token: verificationToken }
       })
-      if (!token) throw new Error('invalid verification token')
+      if (!token || token.expires <= new Date()) throw new Error('invalid verification token')
 
       const identifier = token.identifier || ''
-
       const [tag, userIdStr, domainIdStr] = identifier.split(':')
-      if (tag !== AUTH_SYNC_TOKEN_TAG || Number(domainIdStr) !== expectedDomainId) {
+      if (tag !== AUTH_SYNC_TOKEN_TAG || Number(domainIdStr) !== domain.id) {
         throw new Error('invalid verification token domain')
       }
 
       await tx.verificationToken.delete({ where: { id: token.id } })
 
-      return Number(userIdStr)
+      return {
+        userId: Number(userIdStr),
+        domainId: domain.id,
+        tokenVersion: domain.tokenVersion
+      }
     })
 
-    return { status: 'OK', userId }
+    return { status: 'OK', ...result }
   } catch (error) {
     return { status: 'ERROR', reason: 'cannot validate verification token' }
   }
 }
 
-async function createSessionToken (domainName, userId) {
+async function createSessionToken ({ userId, domainName, domainId, tokenVersion }) {
   try {
-    const domain = await models.domain.findUnique({
-      where: { domainName, status: 'ACTIVE' },
-      select: { id: true, tokenVersion: true }
-    })
-    if (!domain) {
-      return { status: 'ERROR', reason: 'domain is no longer active' }
-    }
-
     const sessionToken = await encodeJWT({
       token: {
         id: userId,
         sub: userId,
         domainName,
-        domainId: domain.id,
-        tokenVersion: domain.tokenVersion
+        domainId,
+        tokenVersion
       },
       secret: process.env.NEXTAUTH_SECRET
     })
