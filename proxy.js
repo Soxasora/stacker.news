@@ -52,7 +52,7 @@ async function customDomainMiddleware (request, domain, subName) {
   // Auth Sync
   if (pathname === '/login' || pathname === '/signup') {
     const signup = pathname.startsWith('/signup')
-    return redirectToAuth(searchParams, domain, signup)
+    return redirectToAuth(request, searchParams, domain, signup)
   }
   if (searchParams.has('sync_token')) return syncAccount(request, searchParams, domain)
 
@@ -82,7 +82,7 @@ async function customDomainMiddleware (request, domain, subName) {
   return NextResponse.next({ request: { headers: reqHeaders } })
 }
 
-async function redirectToAuth (searchParams, domain, signup) {
+async function redirectToAuth (request, searchParams, domain, signup) {
   const loginUrl = new URL('/api/auth/redirect', SN_MAIN_DOMAIN)
   loginUrl.searchParams.set('domain', domain)
 
@@ -100,14 +100,19 @@ async function redirectToAuth (searchParams, domain, signup) {
   // /login, forcing an interactive sign-in
   const parsedDomain = parseSafeHost(domain)
   if (parsedDomain) {
-    const expiration = String(Date.now() + AUTH_SYNC_LOGIN_FLOW_TTL_MS)
-    const proof = createLoginFlowProof({
-      domainName: parsedDomain.hostname,
-      expiration,
-      secret: process.env.NEXTAUTH_SECRET
-    })
-    loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM, proof)
-    loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_EXP_PARAM, expiration)
+    try {
+      const expiration = String(Date.now() + AUTH_SYNC_LOGIN_FLOW_TTL_MS)
+      const proof = createLoginFlowProof({
+        domainName: parsedDomain.hostname,
+        expiration,
+        secret: process.env.NEXTAUTH_SECRET
+      })
+      loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM, proof)
+      loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_EXP_PARAM, expiration)
+    } catch (error) {
+      console.error('[auth sync] cannot mint login flow proof:', error.message)
+      return NextResponse.redirect(new URL('/error', request.url))
+    }
   }
 
   return NextResponse.redirect(loginUrl)
