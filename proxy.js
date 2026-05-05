@@ -47,7 +47,7 @@ async function customDomainMiddleware (request, domain, subName) {
     const signup = pathname.startsWith('/signup')
     return redirectToAuth(searchParams, domain, signup)
   }
-  if (searchParams.has('sync_token')) return syncAccount(request, searchParams, domain, reqHeaders)
+  if (searchParams.has('sync_token')) return syncAccount(request, searchParams, domain)
 
   // clean up the pathname from any subname
   if (pathname.startsWith('/~')) {
@@ -90,7 +90,7 @@ async function redirectToAuth (searchParams, domain, signup) {
   return NextResponse.redirect(loginUrl)
 }
 
-async function syncAccount (request, searchParams, domain, headers) {
+async function syncAccount (request, searchParams, domain) {
   const token = searchParams.get('sync_token')
   const rawRedirectUri = searchParams.get('redirectUri')
   const redirectUri = safeRedirectPath(rawRedirectUri, domain)
@@ -109,7 +109,7 @@ async function syncAccount (request, searchParams, domain, headers) {
     })
 
     const body = JSON.stringify({ verificationToken: token, domainName })
-    const fetchHeaders = new Headers(headers)
+    const fetchHeaders = new Headers()
     fetchHeaders.set('Content-Type', 'application/json')
     fetchHeaders.set(AUTH_SYNC_PROOF_HEADER, proof)
 
