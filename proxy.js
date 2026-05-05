@@ -5,9 +5,7 @@ import {
   createAuthSyncProof,
   createLoginFlowProof,
   AUTH_SYNC_PROOF_HEADER,
-  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM,
-  AUTH_SYNC_LOGIN_FLOW_EXP_PARAM,
-  AUTH_SYNC_LOGIN_FLOW_TTL_MS
+  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM
 } from '@/lib/domains/auth-sync'
 import { getDomainMapping, createDomainsDebugLogger, SN_MAIN_DOMAIN } from '@/lib/domains'
 import { parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
@@ -94,21 +92,18 @@ async function redirectToAuth (request, searchParams, domain, signup) {
     loginUrl.searchParams.set('callbackUrl', searchParams.get('callbackUrl'))
   }
 
-  // CSRF, mint a short-lived HMAC proof bound to the custom domain's hostname.
+  // CSRF, mint a short-lived JWT proof bound to the custom domain's hostname.
   // since only this proxy can mint it, an attacker who lures a logged-in stacker straight to
   // /api/auth/sync ends up bounced back here through the custom domain's
   // /login, forcing an interactive sign-in
   const parsedDomain = parseSafeHost(domain)
   if (parsedDomain) {
     try {
-      const expiration = String(Date.now() + AUTH_SYNC_LOGIN_FLOW_TTL_MS)
-      const proof = createLoginFlowProof({
+      const proof = await createLoginFlowProof({
         domainName: parsedDomain.hostname,
-        expiration,
         secret: process.env.NEXTAUTH_SECRET
       })
       loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM, proof)
-      loginUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_EXP_PARAM, expiration)
     } catch (error) {
       console.error('[auth sync] cannot mint login flow proof:', error.message)
       return NextResponse.redirect(new URL('/error', request.url))

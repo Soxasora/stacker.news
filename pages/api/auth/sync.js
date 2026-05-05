@@ -10,8 +10,7 @@ import {
   verifyAuthSyncProof,
   verifyLoginFlowProof,
   AUTH_SYNC_PROOF_HEADER,
-  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM,
-  AUTH_SYNC_LOGIN_FLOW_EXP_PARAM
+  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM
 } from '@/lib/domains/auth-sync'
 
 export default async function handler (req, res) {
@@ -79,9 +78,8 @@ export default async function handler (req, res) {
 
       // CSRF gate, the proof is minted by the custom-domain proxy in proxy.js when it intercepts /login or /signup
       // making sure that the request came from an intentional user action, not an attacker.
-      const validProof = verifyLoginFlowProof({
+      const validProof = await verifyLoginFlowProof({
         received: req.query[AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM],
-        expiration: req.query[AUTH_SYNC_LOGIN_FLOW_EXP_PARAM],
         domainName: parsedDomain.hostname,
         secret: process.env.NEXTAUTH_SECRET
       })

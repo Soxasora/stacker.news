@@ -1,9 +1,6 @@
 import { SN_MAIN_DOMAIN, getDomainMapping } from '@/lib/domains'
 import { formatHost, parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
-import {
-  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM,
-  AUTH_SYNC_LOGIN_FLOW_EXP_PARAM
-} from '@/lib/domains/auth-sync'
+import { AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM } from '@/lib/domains/auth-sync'
 
 // auth redirect for custom domains
 // redirects to /login or /signup on the main domain,
@@ -31,10 +28,8 @@ export default async function handler (req, res) {
   // forward the proxy-minted CSRF proof so it survives the redirect chain
   // and reaches the sync GET verifier intact.
   const proof = req.query[AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM]
-  const exp = req.query[AUTH_SYNC_LOGIN_FLOW_EXP_PARAM]
-  if (typeof proof === 'string' && typeof exp === 'string') {
+  if (typeof proof === 'string') {
     syncUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM, proof)
-    syncUrl.searchParams.set(AUTH_SYNC_LOGIN_FLOW_EXP_PARAM, exp)
   }
 
   const loginUrl = new URL(signup ? '/signup' : '/login', SN_MAIN_DOMAIN)
