@@ -1,7 +1,7 @@
 import 'urlpattern-polyfill'
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'node:crypto'
-import { SESSION_COOKIE, HTTPS, cookieOptions } from '@/lib/auth'
+import { SESSION_COOKIE, HTTPS, cookieOptions, buildMultiAuthCookies, MULTI_AUTH_LIST } from '@/lib/auth'
 import {
   createAuthSyncProof,
   hashSyncNonce,
@@ -103,6 +103,12 @@ async function redirectToAuth (request, searchParams, domain, signup) {
   if (searchParams.has('callbackUrl')) {
     redirectUrl.searchParams.set('callbackUrl', searchParams.get('callbackUrl'))
   }
+  // forward the "add account" intent so the main /login renders the multi-auth UI
+  // instead of short-circuiting to callbackUrl when the user already has a session.
+  // never paired with signup, which always creates a fresh user.
+  if (!signup && searchParams.get('multiAuth') === 'true') {
+    redirectUrl.searchParams.set('multiAuth', 'true')
+  }
 
   const response = NextResponse.redirect(redirectUrl)
   response.cookies.set(AUTH_SYNC_NONCE_COOKIE, nonce, nonceCookieOptions)
@@ -157,6 +163,26 @@ async function syncAccount (request, searchParams, domain) {
     // one-time use: clear the nonce cookie before issuing the session
     res.cookies.set(AUTH_SYNC_NONCE_COOKIE, '', { ...nonceCookieOptions, maxAge: 0 })
     res.cookies.set(SESSION_COOKIE, data.sessionToken, cookieOptions())
+
+    // mirror multi-auth state on the custom domain so the account picker also works here.
+    // each per-user JWT is the domain-bound session token minted for THIS domain (not the
+    // main-domain JWT), so when switchSessionCookie swaps it in, the [...nextauth] jwt
+    // callback's domainName/tokenVersion check still passes.
+    if (data.user?.id != null) {
+      const multiAuthCookies = buildMultiAuthCookies(
+        request.cookies.get(MULTI_AUTH_LIST)?.value,
+        {
+          id: data.user.id,
+          jwt: data.sessionToken,
+          name: data.user.name,
+          photoId: data.user.photoId
+        }
+      )
+      for (const { name, value, options } of multiAuthCookies) {
+        res.cookies.set(name, value, options)
+      }
+    }
+
     return res
   } catch (error) {
     console.error('[auth sync] cannot establish auth sync:', error.message)

@@ -53,7 +53,14 @@ export default async function handler (req, res) {
         return res.status(500).json(sessionTokenResult)
       }
 
-      return res.status(200).json({ status: 'OK', sessionToken: sessionTokenResult.sessionToken })
+      // forward display fields so the proxy can populate the multi-auth list
+      // cookie on the custom domain (the picker reads name/photoId from that list).
+      // these were fetched in consumeVerificationToken's transaction, no extra round trip.
+      return res.status(200).json({
+        status: 'OK',
+        sessionToken: sessionTokenResult.sessionToken,
+        user: verificationResult.user
+      })
     }
 
     if (req.method === 'GET') {
@@ -200,12 +207,22 @@ async function consumeVerificationToken (verificationToken, expectedDomainName, 
         throw new Error('invalid verification token nonce')
       }
 
+      const userId = Number(userIdStr)
+      // pull display fields in the same transaction so the proxy can seed
+      // MULTI_AUTH_LIST without an additional round trip.
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, photoId: true }
+      })
+      if (!user) throw new Error('invalid verification token user')
+
       await tx.verificationToken.delete({ where: { id: token.id } })
 
       return {
-        userId: Number(userIdStr),
+        userId,
         domainId: domain.id,
-        tokenVersion: domain.tokenVersion
+        tokenVersion: domain.tokenVersion,
+        user
       }
     })
 
