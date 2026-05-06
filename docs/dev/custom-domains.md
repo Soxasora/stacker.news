@@ -167,9 +167,9 @@ A pgboss cron `checkActiveDomainsDNS` runs every 5 minutes (`*/5 * * * *`) and, 
 - on an **inconclusive result** (timeout, `ESERVFAIL`, network error, unknown error code, …), logs and skips. a real persistent drift will surface as a conclusive answer on the next tick
 
 Switching to `HOLD` cascades into:
-1. **Bump token version** — a db trigger on `Domain` increments `tokenVersion` whenever the domain switches from or to `ACTIVE`. [see token revocation via `tokenVersion`](#token-revocation-via-tokenversion).
+1. **Bump token version**, a db trigger on `Domain` increments `tokenVersion` whenever the domain switches from or to `ACTIVE`. [see token revocation via `tokenVersion`](#token-revocation-via-tokenversion).
 2. **Delete cert + verification records**
-3. **Ask ACM to delete certificate** — chained from the cert deletion
+3. **Ask ACM to delete certificate**, chained from the cert deletion
 
 The territory owner can re-verify and the domain returns to `ACTIVE`, but with a higher `tokenVersion` than any token issued before the drift.
 
@@ -207,33 +207,44 @@ and
 Instead of fighting these restrictions, Auth Sync works with them by creating a whole new session:
 - user visits `pizza.com/login`
 - middleware redirects to auth sync **on the main domain** accessing that domain cookies
-- -- `https://stacker.news/api/auth/sync?domain=pizza.com&redirectUri=/items/212142`
+  - `https://stacker.news/api/auth/sync?domain=pizza.com&redirectUri=/items/212142`
 - checks if pizza.com is an **allowed domain**
 - checks if there's a session
-- -- if not: redirects to `stacker.news/login` with `/api/auth/sync` as callback to continue syncing
+  - if not: redirects to `stacker.news/login` with `/api/auth/sync` as callback to continue syncing
 - auth sync creates a short-lived verification token and redirects back to the custom domain with the `sync_token` parameter
-- -- `https://pizza.com/?sync_token=42424242&redirectUri=/items/212142`
+  - `https://pizza.com/?sync_token=42424242&redirectUri=/items/212142`
 - middleware exchanges this token for a session, **setting the session cookie** on pizza.com
-- -- `POST: https://stacker.news/api/auth/sync; verificationToken: 42424242`
+  - `POST: https://stacker.news/api/auth/sync; verificationToken: 42424242`
 
 
 The verification token is a one-time code that dies in **5 minutes** and has **256 bits** of entropy. The JWT is then generated server-side and applied to the final middleware response.
 
-### CSRF gate on `GET /api/auth/sync`
+### CSRF gate on `/api/auth/sync`
 
-`GET /api/auth/sync` mints a `{userId, domainId}`-bound verification token as soon as it sees a valid main-domain session. The session cookie is `SameSite=lax`, so a single-click top-level navigation (`<a href="https://stacker.news/api/auth/sync?domain=…&redirectUri=/">`) carries it. Without an additional check, any owner of an `ACTIVE` custom domain could lure a logged-in stacker to that link and silently mint them a custom-domain session for that territory — bypassing the consent gate that [pages/login.js](../../pages/login.js) enforces, where `domainData` nullifies the session and forces the stacker to interactively log in to the territory.
+`GET /api/auth/sync` mints a `{userId, domainId}`-bound verification token as soon as it sees a valid main-domain session. The session cookie is `SameSite=Lax`, so any top-level click on `<a href="https://stacker.news/api/auth/sync?domain=…&redirectUri=/">` carries it. Without an extra check, any visitor to an `ACTIVE` custom domain's `/login` could lure a logged-in stacker to that link and silently mint them a custom-domain session, bypassing the consent gate in [pages/login.js](../../pages/login.js), where `domainData` nullifies the session and forces an interactive sign-in.
 
-To close this CSRF, the GET handler additionally requires a short-lived JWT proof bound to the destination `domainName`:
+A URL-borne proof alone is **not enough**, because it's harvestable: any visitor can `curl -I https://<custom>/login` and read it from the redirect chain, then replay it against a victim. The defense binds the flow to a **per-browser nonce** stored as a cookie scoped to the custom domain. Cookies cannot be transplanted across browsers, so an attacker's harvested URL value never pairs with the victim's cookie jar.
 
-- **Mint side** — `createLoginFlowProof` in [lib/domains/auth-sync.js](../../lib/domains/auth-sync.js), called from `redirectToAuth` in [proxy.js](../../proxy.js) whenever the custom-domain proxy intercepts a `/login` or `/signup` on a custom domain. The proof is a JWT (JWE) signed/encrypted with `NEXTAUTH_SECRET` via `next-auth/jwt`, scoped to the custom domain's hostname, namespaced with a `purpose: 'auth-sync-login'` claim so it cannot be confused with a session JWT minted under the same secret, and expires in **10 minutes**. Long enough to cover every login flow, for comparison, email magic link only lasts 5 minutes.
-- **Carriage** — the proof stays in the URL as you are redirected from the proxy, to `/api/auth/redirect`, then `/login`, then `/api/auth/callback/<provider>` (if applicable), and finally to `/api/auth/sync`.
-- **Verify side** — `verifyLoginFlowProof` in [pages/api/auth/sync.js](../../pages/api/auth/sync.js) GET decrypts the JWT, checks the `purpose` claim, the `domain` claim and the `exp` timestamp. A missing/invalid/expired proof is not an error: the handler calls `handleNoSession`, which redirects to `https://<custom-domain>/login` (or `/signup`). That request hits the custom-domain proxy again, which mints a **fresh** proof and re-enters the chain. `/login` then nullifies the session for active custom domains and forces an interactive sign-in with the destination domain visible in the page header, turning the CSRF into a phishing problem the stacker can recognize.
+##### Flow
 
-The crucial property of this design is that the proof can **only** be minted by code running inside our own edge proxy. An attacker who controls a custom domain doesn't run our proxy, their DNS just CNAMEs to our load balancer, so they cannot forge the proof. They can only trigger the legitimate flow, which lands the stacker on `/login` with the territory name plainly visible.
+1. **Mint** ([proxy.js](../../proxy.js) `redirectToAuth`), generate 32 random bytes hex-encoded, set them as `__Secure-sync_nonce` (`sync_nonce` in dev) on the custom domain with `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=10min`, then redirect **same-origin** to `https://<custom>/api/auth/redirect` carrying `domain`, `signup`, and any inbound `callbackUrl`. The nonce stays in the cookie; only metadata travels in the URL. Cookie naming follows `lib/auth.js`'s `secureCookie` convention so browsers reject the cookie if the `Secure` flag is ever dropped.
+   - Same-origin is load-bearing: in dev, where custom domains alias to `localhost`, `NextResponse.redirect` to stacker.news can collapse to a relative `Location` and loop back into the middleware. The Pages API route is excluded from the matcher and uses `res.redirect`, which emits the absolute `Location` verbatim.
+2. **Bridge** ([pages/api/auth/redirect.js](../../pages/api/auth/redirect.js)), runs as a plain Pages handler on the custom domain. Reads the nonce from `req.cookies[AUTH_SYNC_NONCE_COOKIE]`, validates with `isValidSyncNonce` (length + hex regex), then redirects to `stacker.news/login?domain=…&callbackUrl=/api/auth/sync?…&sync_nonce=<nonce>`. Missing/invalid cookie bounces back to `<custom>/login` for a fresh mint.
+3. **Verify GET** ([pages/api/auth/sync.js](../../pages/api/auth/sync.js)), validate the URL nonce, SHA-256 it, and mint a verificationToken with `identifier = ${TAG}:${userId}:${domainId}:${nonceHash}`. Missing/invalid nonce -> `handleNoSession` -> bounce back through the custom domain's `/login`.
+4. **Verify POST**, browser lands on `<custom>/?sync_token=…`, the nonce cookie travels back, proxy reads it and POSTs `{ verificationToken, domainName, nonce }` with an HMAC header keyed over `(verificationToken, domainName, nonceHash)`. The handler verifies the HMAC, then inside a `SELECT … FOR UPDATE` transaction compares `storedNonceHash` (parsed from `identifier`) to `hashSyncNonce(body.nonce)` with `safeEqual`. Mismatch throws **before** the delete, so the token survives a concurrent-tab race. On success the proxy clears the nonce cookie and sets the session cookie.
 
-The legitimate flow is unaffected: every legitimate sync starts at the custom domain's `/login` link, so the proxy mints the proof on the very first hop and the stacker signs in once. Only synthetic direct hits to `/api/auth/sync` (or to `/api/auth/redirect` outside the proxy) take the extra bounce.
+##### Why the harvest attack fails
 
-The proof is bound to `domain` so it cannot be replayed against a different territory, bound to the JWT's `exp` claim so it cannot be replayed past its TTL, and carries no secrets so it is safe in the URL. Note that the proof never grants access on its own: the user must still authenticate, so the longer TTL is not a meaningful additional attack surface.
+An attacker can mint at `<custom>/login` all they like, but the resulting `sync_nonce` cookie lives in **their own** browser jar, cookies are origin-scoped, and the only thing on `<custom>` that ever sets this cookie is our edge proxy with a fresh random value each time. They can't transplant their cookie into the victim's jar.
+
+So when the attacker's link reaches the victim's browser, GET happily mints a verificationToken bound to the victim's userId with `nonceHash = sha256(attacker-URL-nonce)`. But once the redirect lands the victim back on `<custom>/`, their cookie jar holds either nothing (proxy fails fast -> `/error`) or a different nonce from their own past flow (`sha256(victim-nonce) ≠ stored-attacker-hash` -> POST rejects, token survives until natural expiry). No session is minted.
+
+##### What's bounded by what
+
+- `identifier` binds the verificationToken to `userId`, `domainId`, and `nonceHash`. Cross-territory replay needs a different `domainId`; cross-flow replay needs a different `nonceHash`. Neither matches.
+- The HMAC proof header binds the proxy's POST to the same `nonceHash`, so a leaked verificationToken cannot be exchanged without the matching nonce.
+- Cookie origin scope binds the nonce to the user agent: the attacker cannot install theirs on the victim, and the victim's is unknowable to the attacker.
+- Neither nonce nor cookie grants access on its own, the user still needs an authenticated `stacker.news` session at GET time, so the 10-minute nonce TTL adds no attack surface.
 
 ### Redirect callback allowlist
 
@@ -251,8 +262,8 @@ JWTs are stateless, so once a session cookie has been set on `pizza.com` we cann
 
 Every custom-domain JWT carries two claims that together make it revocable without abandoning the JWT model:
 
-- **`domainId`** — the primary key of the `Domain` row the token was minted against. Pins the JWT to a specific *row lifetime*. If the row is deleted and recreated (owner removes and re-adds the domain, takeover, etc.), the replacement row has a fresh autoincrement `id` that no pre-existing JWT can reference.
-- **`tokenVersion`** — this is the value of `Domain.tokenVersion` when the JWT was created. If the domain leaves and later returns to `ACTIVE`, `tokenVersion` increases. Old JWTs with a different version become invalid.
+- **`domainId`**, the primary key of the `Domain` row the token was minted against. Pins the JWT to a specific *row lifetime*. If the row is deleted and recreated (owner removes and re-adds the domain, takeover, etc.), the replacement row has a fresh autoincrement `id` that no pre-existing JWT can reference.
+- **`tokenVersion`**, this is the value of `Domain.tokenVersion` when the JWT was created. If the domain leaves and later returns to `ACTIVE`, `tokenVersion` increases. Old JWTs with a different version become invalid.
 
 A `BEFORE UPDATE` trigger on `Domain` (`bump_domain_token_version`) increments `tokenVersion` on **any transition to/from `ACTIVE`**. The trigger alone can't help across row lifetimes, which is exactly why `domainId` exists.
 
@@ -260,8 +271,8 @@ A `BEFORE UPDATE` trigger on `Domain` (`bump_domain_token_version`) increments `
 
 Two sides read these, with different consistency requirements:
 
-- **Mint side** — `createSessionToken` in [pages/api/auth/sync.js](../../pages/api/auth/sync.js) reads the row **directly from the DB** (uncached) and snapshots both `id` and `tokenVersion` into the JWT. Since the minted cookie lives for up to 30 days, any staleness here could mint a token against an outdated row identity or revoked reign.
-- **Verify side** — the next-auth `jwt` callback reads through `getDomainMapping`, which goes through `domainsMappingsCache` (same cache the proxy uses). This runs on every custom-domain request, so hitting the DB here would be expensive. Bounded staleness is acceptable because the mint side already guarantees that no *new* tokens can be minted with the old identity — the stale window only delays the rejection of pre-existing tokens.
+- **Mint side**, `createSessionToken` in [pages/api/auth/sync.js](../../pages/api/auth/sync.js) reads the row **directly from the DB** (uncached) and snapshots both `id` and `tokenVersion` into the JWT. Since the minted cookie lives for up to 30 days, any staleness here could mint a token against an outdated row identity or revoked reign.
+- **Verify side**, the next-auth `jwt` callback reads through `getDomainMapping`, which goes through `domainsMappingsCache` (same cache the proxy uses). This runs on every custom-domain request, so hitting the DB here would be expensive. Bounded staleness is acceptable because the mint side already guarantees that no *new* tokens can be minted with the old identity, the stale window only delays the rejection of pre-existing tokens.
 
 ##### Enforcement
 
@@ -283,15 +294,15 @@ if (token?.domainName) {
 ##### Why all three checks?
 
 They cover different failure modes:
-- `!mapping` — the domain is not `ACTIVE` **right now** (on HOLD, deleted, unknown).
-- `mapping.id !== token.domainId` — the row was deleted and recreated since the token was minted. A fresh row always has a strictly greater autoincrement `id`, so old tokens can never match the new row regardless of what `tokenVersion` happens to land on.
-- `mapping.tokenVersion !== token.tokenVersion` — the domain has crossed the `ACTIVE` boundary at least once since the token was minted, within the same row lifetime.
+- `!mapping`, the domain is not `ACTIVE` **right now** (on HOLD, deleted, unknown).
+- `mapping.id !== token.domainId`, the row was deleted and recreated since the token was minted. A fresh row always has a strictly greater autoincrement `id`, so old tokens can never match the new row regardless of what `tokenVersion` happens to land on.
+- `mapping.tokenVersion !== token.tokenVersion`, the domain has crossed the `ACTIVE` boundary at least once since the token was minted, within the same row lifetime.
 
 ##### an attack scenario, prevented
 
 Two variants worth walking through, since they exercise different parts of the defense.
 
-**Variant A — DNS drift within a single row lifetime** (caught by `tokenVersion`):
+**Variant A, DNS drift within a single row lifetime** (caught by `tokenVersion`):
 
 1. `pizza.com` is `ACTIVE` with `tokenVersion=3`. Alice signs in and gets a JWT carrying `{ domainName: 'pizza.com', domainId: 42, tokenVersion: 3 }`.
 2. The attacker hijacks DNS for `pizza.com` and exfiltrates her cookie.
@@ -300,7 +311,7 @@ Two variants worth walking through, since they exercise different parts of the d
 5. The territory owner notices, fixes DNS, re-verifies. The domain goes back through `PENDING` and the `PENDING -> ACTIVE` trigger bumps `tokenVersion` again, to `5`.
 6. The domain is `ACTIVE` again, so `!mapping` passes and `domainId` still matches (the row was updated, not recreated). **But** the cached `tokenVersion` is `5` while the JWT snapshots `3`, so the version check rejects them: `5 !== 3` -> both have to sign in again.
 
-**Variant B — owner removes and re-adds the domain** (caught by `domainId`):
+**Variant B, owner removes and re-adds the domain** (caught by `domainId`):
 
 1. `pizza.com` is `ACTIVE`, row `id=42`, `tokenVersion=1`. Alice signs in and gets a JWT carrying `{ domainName: 'pizza.com', domainId: 42, tokenVersion: 1 }`. The attacker steals her cookie and keeps it warm (actively replaying so it gets re-encoded with the default 30-day session maxAge).
 2. The owner calls `setDomain(subName, null)`, which hard-deletes row `id=42` (cascading into cert cleanup). Alice's and the attacker's cookies start failing the `!mapping` check.

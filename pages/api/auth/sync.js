@@ -8,32 +8,37 @@ import { VERIFICATION_TOKEN_EXPIRY_MS, AUTH_SYNC_TOKEN_TAG } from '@/lib/constan
 import { multiAuthMiddleware } from '@/lib/auth'
 import {
   verifyAuthSyncProof,
-  verifyLoginFlowProof,
+  hashSyncNonce,
+  isValidSyncNonce,
+  safeEqual,
   AUTH_SYNC_PROOF_HEADER,
-  AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM
+  AUTH_SYNC_NONCE_PARAM
 } from '@/lib/domains/auth-sync'
 
 export default async function handler (req, res) {
   try {
     if (req.method === 'POST') {
-      const { verificationToken, domainName } = req.body
+      const { verificationToken, domainName, nonce } = req.body || {}
       const parsedDomain = parseSafeHost(domainName)
-      if (!verificationToken || !parsedDomain) {
-        return res.status(400).json({ status: 'ERROR', reason: 'verification token and domain name are required' })
+      if (!verificationToken || !parsedDomain || !isValidSyncNonce(nonce)) {
+        return res.status(400).json({ status: 'ERROR', reason: 'verification token, domain name and nonce are required' })
       }
 
-      // verify the request came from our own middleware via proof header
+      const nonceHash = hashSyncNonce(nonce)
+
+      // verify the request came from our own middleware via proof header bound to the nonce
       const validProof = verifyAuthSyncProof({
         received: req.headers[AUTH_SYNC_PROOF_HEADER],
         verificationToken,
         domainName: parsedDomain.hostname,
+        nonceHash,
         secret: process.env.NEXTAUTH_SECRET
       })
       if (!validProof) {
         return res.status(401).json({ status: 'ERROR', reason: 'invalid proof' })
       }
 
-      const verificationResult = await consumeVerificationToken(verificationToken, parsedDomain.hostname)
+      const verificationResult = await consumeVerificationToken(verificationToken, parsedDomain.hostname, nonceHash)
       if (verificationResult.status === 'ERROR') {
         return res.status(400).json(verificationResult)
       }
@@ -76,18 +81,15 @@ export default async function handler (req, res) {
         return handleNoSession(res, canonicalDomain, redirectUri)
       }
 
-      // CSRF gate, the proof is minted by the custom-domain proxy in proxy.js when it intercepts /login or /signup
-      // making sure that the request came from an intentional user action, not an attacker.
-      const validProof = await verifyLoginFlowProof({
-        received: req.query[AUTH_SYNC_LOGIN_FLOW_PROOF_PARAM],
-        domainName: parsedDomain.hostname,
-        secret: process.env.NEXTAUTH_SECRET
-      })
-      if (!validProof) {
+      // CSRF gate: the matching nonce cookie is set on the custom domain by the middleware
+      // when it intercepts /login or /signup. If it's missing, we bounce back to the custom domain to mint a fresh one.
+      const nonce = req.query[AUTH_SYNC_NONCE_PARAM]
+      if (!isValidSyncNonce(nonce)) {
         return handleNoSession(res, canonicalDomain, redirectUri)
       }
+      const nonceHash = hashSyncNonce(nonce)
 
-      const newVerificationToken = await createVerificationToken(sessionToken, domainValidation.domainId)
+      const newVerificationToken = await createVerificationToken(sessionToken, domainValidation.domainId, nonceHash)
       if (newVerificationToken.status === 'ERROR') {
         return res.status(500).json(newVerificationToken)
       }
@@ -120,9 +122,8 @@ async function checkDomainValidity (receivedDomain) {
 
 function handleNoSession (res, domainName, redirectUri, signup = false) {
   // bounce to /login (or /signup) on the *custom* domain, not the main one,
-  // so the request passes through the custom-domain proxy.
-  // the proxy will then redirect back to /api/auth/redirect
-  // that will attach a fresh proof and the required custom domain data
+  // so the request passes through the custom-domain middleware
+  // which mints a fresh nonce cookie and re-enters the flow.
   const customDomainLoginUrl = new URL(
     signup ? '/signup' : '/login',
     `${SN_MAIN_DOMAIN.protocol}//${domainName}`
@@ -134,12 +135,12 @@ function handleNoSession (res, domainName, redirectUri, signup = false) {
   res.redirect(302, customDomainLoginUrl.href)
 }
 
-async function createVerificationToken (token, domainId) {
+async function createVerificationToken (token, domainId, nonceHash) {
   try {
     const verificationToken = await models.verificationToken.create({
       data: {
-        // bind the token to the domain it was created for
-        identifier: `${AUTH_SYNC_TOKEN_TAG}:${token.id}:${domainId}`,
+        // bind the token to the user, the domain, and the per-browser nonce hash
+        identifier: `${AUTH_SYNC_TOKEN_TAG}:${token.id}:${domainId}:${nonceHash}`,
         token: randomBytes(32).toString('hex'),
         expires: new Date(Date.now() + VERIFICATION_TOKEN_EXPIRY_MS)
       }
@@ -164,7 +165,7 @@ function redirectToDomain (res, domain, verificationToken, redirectUri) {
   }
 }
 
-async function consumeVerificationToken (verificationToken, expectedDomainName) {
+async function consumeVerificationToken (verificationToken, expectedDomainName, expectedNonceHash) {
   try {
     await validateSchema(customDomainSchema, { domainName: expectedDomainName })
 
@@ -186,9 +187,17 @@ async function consumeVerificationToken (verificationToken, expectedDomainName) 
       if (!token || token.expires <= new Date()) throw new Error('invalid verification token')
 
       const identifier = token.identifier || ''
-      const [tag, userIdStr, domainIdStr] = identifier.split(':')
+      const [tag, userIdStr, domainIdStr, storedNonceHash] = identifier.split(':')
       if (tag !== AUTH_SYNC_TOKEN_TAG || Number(domainIdStr) !== domain.id) {
         throw new Error('invalid verification token domain')
+      }
+
+      // nonce-hash binding: the cookie that travelled back with this request must
+      // hash to the value we stored at mint time.
+      // mismatch throws before the delete so the transaction rolls back and the token survives
+      // for a legitimate retry (e.g. cookie overwritten by a concurrent tab flow).
+      if (!safeEqual(storedNonceHash, expectedNonceHash)) {
+        throw new Error('invalid verification token nonce')
       }
 
       await tx.verificationToken.delete({ where: { id: token.id } })
