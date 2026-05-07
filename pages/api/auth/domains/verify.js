@@ -15,7 +15,7 @@
 
 import { parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
 import { SN_MAIN_DOMAIN } from '@/lib/domains'
-import { DOMAINS_AUTH_VERIFIER_COOKIE } from '@/lib/domains/auth-sync'
+import { DOMAINS_AUTH_VERIFIER_COOKIE, isValidHex64 } from '@/lib/domains/auth'
 import * as cookie from 'cookie'
 import { cookieOptions, buildMultiAuthCookies, MULTI_AUTH_LIST, SESSION_COOKIE } from '@/lib/auth'
 
@@ -36,6 +36,9 @@ export default async function handler (req, res) {
 
     // get the verifier from custom domain cookies
     const verifier = req.cookies[DOMAINS_AUTH_VERIFIER_COOKIE]
+    if (!isValidHex64(verifier)) {
+      return res.status(400).json({ status: 'ERROR', reason: 'verifier is not valid' })
+    }
 
     // exchange the code for a session token
     const tokenData = await exchangeCode(domainName, code, verifier)

@@ -18,7 +18,7 @@ import models from '@/api/models'
 import { parseSafeHost, formatHost, safeRedirectPath } from '@/lib/safe-url'
 import { multiAuthMiddleware } from '@/lib/auth'
 import { getToken } from 'next-auth/jwt'
-import { isValidDomain } from '@/lib/domains/auth-sync'
+import { isValidDomain, isValidHex64 } from '@/lib/domains/auth'
 import { SN_MAIN_DOMAIN } from '@/lib/domains'
 import { DOMAINS_AUTH_CODE_EXPIRY_MS } from '@/lib/constants'
 import { randomBytes } from 'node:crypto'
@@ -38,6 +38,11 @@ export default async function handler (req, res) {
     const domainValidation = await isValidDomain(parsedDomain.hostname)
     if (!domainValidation) {
       return res.status(400).json({ status: 'ERROR', reason: 'domain is not valid' })
+    }
+
+    const challengeValidation = isValidHex64(challenge)
+    if (!challengeValidation) {
+      return res.status(400).json({ status: 'ERROR', reason: 'challenge is not valid' })
     }
 
     const domainId = await getDomainId(parsedDomain.hostname)

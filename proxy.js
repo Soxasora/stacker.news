@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'node:crypto'
 import { HTTPS } from '@/lib/auth'
 import {
-  hashVerifier,
+  deriveChallenge,
   DOMAINS_AUTH_VERIFIER_COOKIE,
   DOMAINS_AUTH_VERIFIER_BYTES,
   DOMAINS_AUTH_VERIFIER_TTL_S
-} from '@/lib/domains/auth-sync'
+} from '@/lib/domains/auth'
 import { getDomainMapping, createDomainsDebugLogger } from '@/lib/domains'
 
 const verifierCookieOptions = {
@@ -90,7 +90,7 @@ async function customDomainMiddleware (request, domain, subName) {
 async function redirectToAuth (request, searchParams, domain, signup) {
   // mint verifier as httponly cookie
   const verifier = randomBytes(DOMAINS_AUTH_VERIFIER_BYTES).toString('hex')
-  const hashedVerifier = hashVerifier(verifier)
+  const hashedVerifier = deriveChallenge(verifier)
 
   // /api/auth/domains/begin is a workaround to handle localhost redirects.
   const redirectUrl = new URL('/api/auth/domains/begin', request.url)

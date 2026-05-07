@@ -17,7 +17,7 @@
 //
 // it's only a workaround to handle localhost redirects due to nextjs bug
 
-import { DOMAINS_AUTH_VERIFIER_COOKIE, isValidVerifier } from '@/lib/domains/auth-sync'
+import { DOMAINS_AUTH_VERIFIER_COOKIE, deriveChallenge, isValidHex64, safeEqual } from '@/lib/domains/auth'
 import { parseSafeHost, formatHost, safeRedirectPath } from '@/lib/safe-url'
 import { getDomainMapping, SN_MAIN_DOMAIN } from '@/lib/domains'
 
@@ -44,7 +44,7 @@ export default async function handler (req, res) {
   // the auth verifier is set as a cookie on the custom domain by middleware's redirectToAuth.
   // if it's missing, we bounce back to the custom domain to mint a fresh one.
   const verifier = req.cookies[DOMAINS_AUTH_VERIFIER_COOKIE]
-  if (!challenge || !isValidVerifier(verifier)) {
+  if (!isValidHex64(challenge) || !isValidHex64(verifier) || !safeEqual(challenge, deriveChallenge(verifier))) {
     // TODO: piggyback on the main domain's protocol, might be misleading to read
     const protocol = SN_MAIN_DOMAIN.protocol
     const retry = new URL(signup ? '/signup' : '/login', `${protocol}//${canonicalDomain}`)

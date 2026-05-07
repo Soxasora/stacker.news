@@ -5,12 +5,12 @@
 //   domainName: domainName,
 //   verifier: verifier
 // }
-// compares code+verifier against the DB stored code+verifier
+// compares code+verifier against the DB stored code+challenge
 // if they match, creates a JWT and returns it
 
 import models from '@/api/models'
 import { parseSafeHost } from '@/lib/safe-url'
-import { hashVerifier, isValidDomain } from '@/lib/domains/auth-sync'
+import { deriveChallenge, isValidDomain, isValidHex64, safeEqual } from '@/lib/domains/auth'
 import { encode as encodeJWT } from 'next-auth/jwt'
 
 export default async function handler (req, res) {
@@ -21,12 +21,12 @@ export default async function handler (req, res) {
   try {
     const { code, domainName, verifier } = req.body
     const parsedDomain = parseSafeHost(domainName)
-    if (!code || !parsedDomain || !verifier) {
-      return res.status(400).json({ status: 'ERROR', reason: 'missing required data' })
+    if (!isValidHex64(code) || !parsedDomain || !isValidHex64(verifier)) {
+      return res.status(400).json({ status: 'ERROR', reason: 'valid code, domainName, and verifier are required' })
     }
 
     // hash the verifier to get the challenge
-    const challenge = hashVerifier(verifier)
+    const challenge = deriveChallenge(verifier)
     // consume the verification code, comparing the challenge and code to the stored values
     const verificationResult = await consumeVerificationCode(domainName, code, challenge)
     if (!verificationResult) {
@@ -74,9 +74,10 @@ async function consumeVerificationCode (domainName, code, challenge) {
       if (!domain) throw new Error('domain not allowed')
 
       const verificationCode = await tx.domainAuthRequest.findUnique({
-        where: { code, challenge, expiresAt: { gt: new Date() } }
+        where: { code, expiresAt: { gt: new Date() } }
       })
       if (!verificationCode) throw new Error('invalid verification code')
+      if (!safeEqual(verificationCode.challenge, challenge)) throw new Error('invalid verification challenge')
 
       const sameDomain = Number(verificationCode.domainId) === Number(domain.id)
       if (!sameDomain) throw new Error('code domain mismatch')
