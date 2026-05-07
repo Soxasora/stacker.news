@@ -1,29 +1,18 @@
-// responsible for redirecting to main domain /login or /signup
-//
-// GET pizza.com/api/auth/domains/begin
-// with the following query params:
-// - domain: domainName
-// - challenge: hashed verifier
-// - redirectUri: /settings
-// - signup: true or false
-// - multiAuth: true or false
-//
-// redirects to GET stacker.news/login or GET stacker.news/signup
-// with the following query params:
-// - domain: domainName
-// - callbackUrl: /api/auth/domains/code?challenge=challenge&redirectUri=/settings
-// - signup: true or false
-// - multiAuth: true or false
-//
-// it's only a workaround to handle localhost redirects due to nextjs bug
-
 import { DOMAINS_AUTH_VERIFIER_COOKIE, deriveChallenge, isValidHex64, safeEqual } from '@/lib/domains/auth'
 import { parseSafeHost, formatHost, safeRedirectPath } from '@/lib/safe-url'
 import { getDomainMapping, SN_MAIN_DOMAIN } from '@/lib/domains'
 
-// Next.js cannot redirect to an absolute localhost URL, it gets converted to a relative URL.
-// https://github.com/vercel/next.js/issues/44482
-// so we use this API route to handle custom domain redirects, keeping support for local dev env.
+/**
+ * Step 1 of the custom domain auth flow
+ * responsible for redirecting to main domain /login or /signup retaining the auth query params.
+ *
+ * swaps the original callbackUrl for /api/auth/domains/code with challenge and redirectUri (the original callbackUrl).
+ *
+ * Next.js cannot redirect to an absolute localhost URL, it gets converted to a relative URL.
+ * https://github.com/vercel/next.js/issues/44482
+ *
+ * visited on the custom domain after the user clicks "login"/"signup".
+ */
 export default async function handler (req, res) {
   const { domain, callbackUrl, signup, multiAuth, challenge } = req.query
   const parsedDomain = parseSafeHost(domain)

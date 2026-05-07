@@ -1,18 +1,15 @@
-// called with POST by /api/auth/domains/verify
-// with the following body:
-// {
-//   code,
-//   domainName: domainName,
-//   verifier: verifier
-// }
-// compares code+verifier against the DB stored code+challenge
-// if they match, creates a JWT and returns it
-
 import models from '@/api/models'
 import { parseSafeHost } from '@/lib/safe-url'
-import { deriveChallenge, isValidDomain, isValidHex64, safeEqual } from '@/lib/domains/auth'
+import { deriveChallenge, isValidHex64, safeEqual } from '@/lib/domains/auth'
 import { encode as encodeJWT } from 'next-auth/jwt'
 
+/**
+ * Latest step of the custom domain auth flow
+ * called with POST by /api/auth/domains/verify to exchange the code for a session token
+ *
+ * Compares code+hashed_verifier against the DB stored code+challenge,
+ * if they match, creates a JWT and multi-auth cookies and returns them
+ */
 export default async function handler (req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ status: 'ERROR', reason: 'method not allowed' })
@@ -28,7 +25,7 @@ export default async function handler (req, res) {
     // hash the verifier to get the challenge
     const challenge = deriveChallenge(verifier)
     // consume the verification code, comparing the challenge and code to the stored values
-    const verificationResult = await consumeVerificationCode(domainName, code, challenge)
+    const verificationResult = await consumeVerificationCode(parsedDomain.hostname, code, challenge)
     if (!verificationResult) {
       return res.status(400).json({ status: 'ERROR', reason: 'cannot consume verification code' })
     }
@@ -59,8 +56,6 @@ export default async function handler (req, res) {
 
 async function consumeVerificationCode (domainName, code, challenge) {
   try {
-    await isValidDomain(domainName)
-
     const result = await models.$transaction(async tx => {
       // lock the Domain row in order to avoid minting a session against a stale tokenVersion.
       const domains = await tx.$queryRaw`

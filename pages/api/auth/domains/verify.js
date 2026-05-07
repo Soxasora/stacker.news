@@ -1,24 +1,19 @@
-// custom domain calls POST /api/auth/domains/token
-// receives code, redirectUri
-// e.g. https://pizza.com/?code=1234567890&redirectUri=/settings
-// grabs from cookies the `verifier`
-// POSTs to /api/auth/domains/token
-// with the following body:
-// {
-//   code,
-//   domainName: domainName,
-//   verifier: verifier
-// }
-//
-// receives JWT
-// redirects to redirectUri with the JWT in the response as Set-Cookie
-
 import { parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
 import { SN_MAIN_DOMAIN } from '@/lib/domains'
 import { DOMAINS_AUTH_VERIFIER_COOKIE, isValidHex64 } from '@/lib/domains/auth'
 import * as cookie from 'cookie'
 import { cookieOptions, buildMultiAuthCookies, MULTI_AUTH_LIST, SESSION_COOKIE } from '@/lib/auth'
 
+/**
+ * Step 3 of the custom domain auth flow
+ * responsible for
+ * - verifying the code, calling /api/auth/domains/token to exchange it for a session token
+ * - setting the session cookie on the custom domain
+ * - setting the multi-auth cookies on the custom domain
+ * - redirecting to the custom domain
+ *
+ * visited on the custom domain after a successful main domain /api/auth/domains/code request.
+ */
 export default async function handler (req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ status: 'ERROR', reason: 'method not allowed' })
@@ -26,7 +21,7 @@ export default async function handler (req, res) {
 
   try {
     const { code, redirectUri: rawRedirectUri } = req.query
-    if (!code || !rawRedirectUri) {
+    if (!isValidHex64(code) || !rawRedirectUri) {
       return res.status(400).json({ status: 'ERROR', reason: 'code and redirectUri are required' })
     }
 

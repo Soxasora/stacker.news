@@ -18,11 +18,18 @@ import models from '@/api/models'
 import { parseSafeHost, formatHost, safeRedirectPath } from '@/lib/safe-url'
 import { multiAuthMiddleware } from '@/lib/auth'
 import { getToken } from 'next-auth/jwt'
-import { isValidDomain, isValidHex64 } from '@/lib/domains/auth'
+import { isValidHex64 } from '@/lib/domains/auth'
 import { SN_MAIN_DOMAIN } from '@/lib/domains'
 import { DOMAINS_AUTH_CODE_EXPIRY_MS } from '@/lib/constants'
 import { randomBytes } from 'node:crypto'
 
+/**
+ * Step 2 of the custom domain auth flow
+ * responsible for creating a verification code tied to the current main domain session and storing it in the DB
+ * redirects to the custom domain /api/auth/domains/verify with the code as query param for verification.
+ *
+ * visited on the main domain after the user clicks "login" on the main domain.
+ */
 export default async function handler (req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ status: 'ERROR', reason: 'method not allowed' })
@@ -33,11 +40,6 @@ export default async function handler (req, res) {
     const parsedDomain = parseSafeHost(domain)
     if (!parsedDomain) {
       return res.status(400).json({ status: 'ERROR', reason: 'domain is required' })
-    }
-
-    const domainValidation = await isValidDomain(parsedDomain.hostname)
-    if (!domainValidation) {
-      return res.status(400).json({ status: 'ERROR', reason: 'domain is not valid' })
     }
 
     const challengeValidation = isValidHex64(challenge)
@@ -59,8 +61,6 @@ export default async function handler (req, res) {
     if (!sessionToken) {
       return handleNoSession(res, canonicalDomain, redirectUri)
     }
-
-    // TODO: implement hashed verifier validation if applicable
 
     const newCode = await createCode(sessionToken, domainId, challenge)
     return redirectToVerification(res, canonicalDomain, newCode.code, redirectUri)
