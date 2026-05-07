@@ -196,9 +196,20 @@ It's a necessary step to ensure that we don't waste AWS resources and also provi
 
 # Auth Sync
 
-Cross-domain JWT authentication is a complex issue due to browser security restrictions
+Cross-domain JWT authentication is a browser boundary problem: the main SN session cookie cannot be read or set by an `ACTIVE` custom domain. The flow uses a short-lived verifier/challenge pair, a one-time DB code, and a domain-bound JWT.
 
-TODO: rewrite this section with accurate and updated informations about the custom domains' auth flow.
+### Custom domain login flow
+
+1. The user opens `/login` or `/signup` on an `ACTIVE` custom domain.
+2. `proxy.js` mints a 32-byte hex verifier, stores it in the httpOnly `domains_auth_verifier` cookie on the custom domain, derives `challenge = sha256(verifier)`, then redirects to `/api/auth/domains/begin` on the custom domain with `domain`, `challenge`, `callbackUrl`, and optional `multiAuth`.
+3. `begin.js` checks the domain is active, checks the challenge matches the custom-domain verifier cookie, normalizes the final redirect to a safe path, then redirects to main-domain `/login` or `/signup`. The main-domain `callbackUrl` becomes `/api/auth/domains/code?domain=...&challenge=...&redirectUri=...`.
+4. After main-domain auth succeeds, NextAuth calls `/api/auth/domains/code` on the main domain. `code.js` requires an active domain and a main-domain session, creates a random one-time `DomainAuthRequest` code tied to `{ userId, domainId, challenge }`, expiring after 5 minutes, then redirects back to the custom domain `/api/auth/domains/verify`.
+5. `verify.js` runs on the custom domain, reads the verifier cookie, posts `{ code, domainName, verifier }` to main-domain `/api/auth/domains/token`, then sets the returned JWT as the custom-domain session cookie. It also mirrors multi-auth cookies with the domain-bound JWT.
+6. `token.js` derives the challenge from the verifier, locks the `Domain` row, requires the domain to still be `ACTIVE`, checks the code, challenge, domain, and expiry, deletes the code, then returns a JWT carrying `domainName`, `domainId`, and `tokenVersion`.
+
+### Attack scenario: leaked code replay
+
+An attacker gets a `/api/auth/domains/verify?code=...` URL from browser history, logs, or a copied redirect. They POST that code to `/api/auth/domains/token` from their own client. The exchange fails unless they also have the custom-domain httpOnly verifier cookie whose hash matches the stored challenge. Even with the verifier, the code is single-use, expires after 5 minutes, and is bound to the original active `Domain` row.
 
 ### Redirect callback allowlist
 
@@ -225,8 +236,7 @@ A `BEFORE UPDATE` trigger on `Domain` (`bump_domain_token_version`) increments `
 
 Two sides read these, with different consistency requirements:
 
-TODO: update with accurate and updated informations
-- **Mint side**, `createSessionToken` in [pages/api/auth/sync.js](../../pages/api/auth/sync.js) reads the row **directly from the DB** (uncached) and snapshots both `id` and `tokenVersion` into the JWT. Since the minted cookie lives for up to 30 days, any staleness here could mint a token against an outdated row identity or revoked reign.
+- **Mint side**, `consumeVerificationCode` and `createSessionToken` in [pages/api/auth/domains/token.js](../../pages/api/auth/domains/token.js) read and lock the `Domain` row **directly from the DB** before snapshotting both `id` and `tokenVersion` into the JWT. Since the minted cookie lives for up to 30 days, any staleness here could mint a token against an outdated row identity or revoked reign.
 - **Verify side**, the next-auth `jwt` callback reads through `getDomainMapping`, which goes through `domainsMappingsCache` (same cache the proxy uses). This runs on every custom-domain request, so hitting the DB here would be expensive. Bounded staleness is acceptable because the mint side already guarantees that no *new* tokens can be minted with the old identity, the stale window only delays the rejection of pre-existing tokens.
 
 ##### Enforcement
