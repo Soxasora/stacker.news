@@ -196,55 +196,9 @@ It's a necessary step to ensure that we don't waste AWS resources and also provi
 
 # Auth Sync
 
-Cross-domain JWT authentication is a complex issue due to browser security restrictions, mainly because cookies:
-- are bound to specific domains
+Cross-domain JWT authentication is a complex issue due to browser security restrictions
 
-and
-
-- can't be set for another domain
-- -- `stacker.news` <- cookie -> `pizza.com` 🚫
-
-Instead of fighting these restrictions, Auth Sync works with them by creating a whole new session:
-- user visits `pizza.com/login`
-- middleware redirects to auth sync **on the main domain** accessing that domain cookies
-  - `https://stacker.news/api/auth/sync?domain=pizza.com&redirectUri=/items/212142`
-- checks if pizza.com is an **allowed domain**
-- checks if there's a session
-  - if not: redirects to `stacker.news/login` with `/api/auth/sync` as callback to continue syncing
-- auth sync creates a short-lived verification token and redirects back to the custom domain with the `sync_token` parameter
-  - `https://pizza.com/?sync_token=42424242&redirectUri=/items/212142`
-- middleware exchanges this token for a session, **setting the session cookie** on pizza.com
-  - `POST: https://stacker.news/api/auth/sync; verificationToken: 42424242`
-
-
-The verification token is a one-time code that dies in **5 minutes** and has **256 bits** of entropy. The JWT is then generated server-side and applied to the final middleware response.
-
-### CSRF gate on `/api/auth/sync`
-
-`GET /api/auth/sync` mints a `{userId, domainId}`-bound verification token as soon as it sees a valid main-domain session. The session cookie is `SameSite=Lax`, so any top-level click on `<a href="https://stacker.news/api/auth/sync?domain=…&redirectUri=/">` carries it. Without an extra check, any visitor to an `ACTIVE` custom domain's `/login` could lure a logged-in stacker to that link and silently mint them a custom-domain session, bypassing the consent gate in [pages/login.js](../../pages/login.js), where `domainData` nullifies the session and forces an interactive sign-in.
-
-A URL-borne proof alone is **not enough**, because it's harvestable: any visitor can `curl -I https://<custom>/login` and read it from the redirect chain, then replay it against a victim. The defense binds the flow to a **per-browser nonce** stored as a cookie scoped to the custom domain. Cookies cannot be transplanted across browsers, so an attacker's harvested URL value never pairs with the victim's cookie jar.
-
-##### Flow
-
-1. **Mint** ([proxy.js](../../proxy.js) `redirectToAuth`), generate 32 random bytes hex-encoded, set them as `__Secure-sync_nonce` (`sync_nonce` in dev) on the custom domain with `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=10min`, then redirect **same-origin** to `https://<custom>/api/auth/redirect` carrying `domain`, `signup`, and any inbound `callbackUrl`. The nonce stays in the cookie; only metadata travels in the URL. Cookie naming follows `lib/auth.js`'s `secureCookie` convention so browsers reject the cookie if the `Secure` flag is ever dropped.
-   - Same-origin is load-bearing: in dev, where custom domains alias to `localhost`, `NextResponse.redirect` to stacker.news can collapse to a relative `Location` and loop back into the middleware. The Pages API route is excluded from the matcher and uses `res.redirect`, which emits the absolute `Location` verbatim.
-2. **Bridge** ([pages/api/auth/redirect.js](../../pages/api/auth/redirect.js)), runs as a plain Pages handler on the custom domain. Reads the nonce from `req.cookies[AUTH_SYNC_NONCE_COOKIE]`, validates with `isValidSyncNonce` (length + hex regex), then redirects to `stacker.news/login?domain=…&callbackUrl=/api/auth/sync?…&sync_nonce=<nonce>`. Missing/invalid cookie bounces back to `<custom>/login` for a fresh mint.
-3. **Verify GET** ([pages/api/auth/sync.js](../../pages/api/auth/sync.js)), validate the URL nonce, SHA-256 it, and mint a verificationToken with `identifier = ${TAG}:${userId}:${domainId}:${nonceHash}`. Missing/invalid nonce -> `handleNoSession` -> bounce back through the custom domain's `/login`.
-4. **Verify POST**, browser lands on `<custom>/?sync_token=…`, the nonce cookie travels back, proxy reads it and POSTs `{ verificationToken, domainName, nonce }` with an HMAC header keyed over `(verificationToken, domainName, nonceHash)`. The handler verifies the HMAC, then inside a `SELECT … FOR UPDATE` transaction compares `storedNonceHash` (parsed from `identifier`) to `hashSyncNonce(body.nonce)` with `safeEqual`. Mismatch throws **before** the delete, so the token survives a concurrent-tab race. On success the proxy clears the nonce cookie and sets the session cookie.
-
-##### Why the harvest attack fails
-
-An attacker can mint at `<custom>/login` all they like, but the resulting `sync_nonce` cookie lives in **their own** browser jar, cookies are origin-scoped, and the only thing on `<custom>` that ever sets this cookie is our edge proxy with a fresh random value each time. They can't transplant their cookie into the victim's jar.
-
-So when the attacker's link reaches the victim's browser, GET happily mints a verificationToken bound to the victim's userId with `nonceHash = sha256(attacker-URL-nonce)`. But once the redirect lands the victim back on `<custom>/`, their cookie jar holds either nothing (proxy fails fast -> `/error`) or a different nonce from their own past flow (`sha256(victim-nonce) ≠ stored-attacker-hash` -> POST rejects, token survives until natural expiry). No session is minted.
-
-##### What's bounded by what
-
-- `identifier` binds the verificationToken to `userId`, `domainId`, and `nonceHash`. Cross-territory replay needs a different `domainId`; cross-flow replay needs a different `nonceHash`. Neither matches.
-- The HMAC proof header binds the proxy's POST to the same `nonceHash`, so a leaked verificationToken cannot be exchanged without the matching nonce.
-- Cookie origin scope binds the nonce to the user agent: the attacker cannot install theirs on the victim, and the victim's is unknowable to the attacker.
-- Neither nonce nor cookie grants access on its own, the user still needs an authenticated `stacker.news` session at GET time, so the 10-minute nonce TTL adds no attack surface.
+TODO: rewrite this section with accurate and updated informations about the custom domains' auth flow.
 
 ### Redirect callback allowlist
 
@@ -271,6 +225,7 @@ A `BEFORE UPDATE` trigger on `Domain` (`bump_domain_token_version`) increments `
 
 Two sides read these, with different consistency requirements:
 
+TODO: update with accurate and updated informations
 - **Mint side**, `createSessionToken` in [pages/api/auth/sync.js](../../pages/api/auth/sync.js) reads the row **directly from the DB** (uncached) and snapshots both `id` and `tokenVersion` into the JWT. Since the minted cookie lives for up to 30 days, any staleness here could mint a token against an outdated row identity or revoked reign.
 - **Verify side**, the next-auth `jwt` callback reads through `getDomainMapping`, which goes through `domainsMappingsCache` (same cache the proxy uses). This runs on every custom-domain request, so hitting the DB here would be expensive. Bounded staleness is acceptable because the mint side already guarantees that no *new* tokens can be minted with the old identity, the stale window only delays the rejection of pre-existing tokens.
 

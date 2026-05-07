@@ -1,24 +1,21 @@
 import 'urlpattern-polyfill'
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'node:crypto'
-import { SESSION_COOKIE, HTTPS, cookieOptions, buildMultiAuthCookies, MULTI_AUTH_LIST } from '@/lib/auth'
+import { HTTPS } from '@/lib/auth'
 import {
-  createAuthSyncProof,
-  hashSyncNonce,
-  AUTH_SYNC_PROOF_HEADER,
-  AUTH_SYNC_NONCE_COOKIE,
-  AUTH_SYNC_NONCE_TTL_S,
-  AUTH_SYNC_NONCE_HEX_LENGTH
+  hashVerifier,
+  DOMAINS_AUTH_VERIFIER_COOKIE,
+  DOMAINS_AUTH_VERIFIER_BYTES,
+  DOMAINS_AUTH_VERIFIER_TTL_S
 } from '@/lib/domains/auth-sync'
-import { getDomainMapping, createDomainsDebugLogger, SN_MAIN_DOMAIN } from '@/lib/domains'
-import { parseSafeHost, safeRedirectPath } from '@/lib/safe-url'
+import { getDomainMapping, createDomainsDebugLogger } from '@/lib/domains'
 
-const nonceCookieOptions = {
+const verifierCookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
   secure: HTTPS,
   path: '/',
-  maxAge: AUTH_SYNC_NONCE_TTL_S
+  maxAge: DOMAINS_AUTH_VERIFIER_TTL_S
 }
 
 const referrerPattern = new URLPattern({ pathname: ':pathname(*)/r/:referrer([\\w_]+)' })
@@ -63,7 +60,6 @@ async function customDomainMiddleware (request, domain, subName) {
     const signup = pathname.startsWith('/signup')
     return redirectToAuth(request, searchParams, domain, signup)
   }
-  if (searchParams.has('sync_token')) return syncAccount(request, searchParams, domain)
 
   // clean up the pathname from any subname
   if (pathname.startsWith('/~')) {
@@ -92,13 +88,14 @@ async function customDomainMiddleware (request, domain, subName) {
 }
 
 async function redirectToAuth (request, searchParams, domain, signup) {
-  // CSRF: mint a per-browser nonce here,
-  // then redirect through /api/auth/redirect so the main domain receives and validates the nonce-bound flow.
-  const nonce = randomBytes(AUTH_SYNC_NONCE_HEX_LENGTH / 2).toString('hex')
+  // mint verifier as httponly cookie
+  const verifier = randomBytes(DOMAINS_AUTH_VERIFIER_BYTES).toString('hex')
+  const hashedVerifier = hashVerifier(verifier)
 
-  // /api/auth/redirect is a workaround to handle localhost redirects.
-  const redirectUrl = new URL('/api/auth/redirect', request.url)
+  // /api/auth/domains/begin is a workaround to handle localhost redirects.
+  const redirectUrl = new URL('/api/auth/domains/begin', request.url)
   redirectUrl.searchParams.set('domain', domain)
+  redirectUrl.searchParams.set('challenge', hashedVerifier)
   if (signup) redirectUrl.searchParams.set('signup', '1')
   if (searchParams.has('callbackUrl')) {
     redirectUrl.searchParams.set('callbackUrl', searchParams.get('callbackUrl'))
@@ -111,83 +108,8 @@ async function redirectToAuth (request, searchParams, domain, signup) {
   }
 
   const response = NextResponse.redirect(redirectUrl)
-  response.cookies.set(AUTH_SYNC_NONCE_COOKIE, nonce, nonceCookieOptions)
+  response.cookies.set(DOMAINS_AUTH_VERIFIER_COOKIE, verifier, verifierCookieOptions)
   return response
-}
-
-async function syncAccount (request, searchParams, domain) {
-  const token = searchParams.get('sync_token')
-  const rawRedirectUri = searchParams.get('redirectUri')
-  const redirectUri = safeRedirectPath(rawRedirectUri, domain)
-  const res = NextResponse.redirect(new URL(redirectUri, request.url))
-  // HMAC inputs must match the verifier, which keys on the bare hostname.
-  const { hostname: domainName } = parseSafeHost(domain)
-
-  // require the per-browser nonce we set during redirectToAuth.
-  // this proves this browser is the same one that started the login flow.
-  const nonce = request.cookies.get(AUTH_SYNC_NONCE_COOKIE)?.value
-  if (!nonce) {
-    return NextResponse.redirect(new URL('/error', request.url))
-  }
-  const nonceHash = hashSyncNonce(nonce)
-
-  try {
-    const proof = createAuthSyncProof({
-      verificationToken: token,
-      domainName,
-      nonceHash,
-      secret: process.env.NEXTAUTH_SECRET
-    })
-
-    const body = JSON.stringify({ verificationToken: token, domainName, nonce })
-    const fetchHeaders = new Headers()
-    fetchHeaders.set('Content-Type', 'application/json')
-    fetchHeaders.set(AUTH_SYNC_PROOF_HEADER, proof)
-
-    const response = await fetch(`${SN_MAIN_DOMAIN.origin}/api/auth/sync`, {
-      method: 'POST',
-      headers: fetchHeaders,
-      body,
-      signal: AbortSignal.timeout(10000)
-    })
-
-    if (!response.ok) {
-      throw new Error(response.status)
-    }
-
-    const data = await response.json()
-    if (data.status === 'ERROR') {
-      throw new Error(data.reason)
-    }
-
-    // one-time use: clear the nonce cookie before issuing the session
-    res.cookies.set(AUTH_SYNC_NONCE_COOKIE, '', { ...nonceCookieOptions, maxAge: 0 })
-    res.cookies.set(SESSION_COOKIE, data.sessionToken, cookieOptions())
-
-    // mirror multi-auth state on the custom domain so the account picker also works here.
-    // each per-user JWT is the domain-bound session token minted for THIS domain (not the
-    // main-domain JWT), so when switchSessionCookie swaps it in, the [...nextauth] jwt
-    // callback's domainName/tokenVersion check still passes.
-    if (data.user?.id != null) {
-      const multiAuthCookies = buildMultiAuthCookies(
-        request.cookies.get(MULTI_AUTH_LIST)?.value,
-        {
-          id: data.user.id,
-          jwt: data.sessionToken,
-          name: data.user.name,
-          photoId: data.user.photoId
-        }
-      )
-      for (const { name, value, options } of multiAuthCookies) {
-        res.cookies.set(name, value, options)
-      }
-    }
-
-    return res
-  } catch (error) {
-    console.error('[auth sync] cannot establish auth sync:', error.message)
-    return NextResponse.redirect(new URL('/error', request.url))
-  }
 }
 
 function getContentReferrer (request, url) {
