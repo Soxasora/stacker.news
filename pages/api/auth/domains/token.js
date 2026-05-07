@@ -8,7 +8,7 @@ import { encode as encodeJWT } from 'next-auth/jwt'
  * called with POST by /api/auth/domains/verify to exchange the code for a session token
  *
  * Compares code+hashed_verifier against the DB stored code+challenge,
- * if they match, creates a JWT and multi-auth cookies and returns them
+ * if they match, creates a JWT and returns it to /api/auth/domains/verify to set the session cookie and multi-auth cookies.
  */
 export default async function handler (req, res) {
   if (req.method !== 'POST') {

@@ -27,7 +27,7 @@ export default async function handler (req, res) {
 
     const domain = req.headers.host
     const redirectUri = safeRedirectPath(rawRedirectUri, domain)
-    const { hostname: domainName } = parseSafeHost(domain)
+    const parsedDomain = parseSafeHost(domain)
 
     // get the verifier from custom domain cookies
     const verifier = req.cookies[DOMAINS_AUTH_VERIFIER_COOKIE]
@@ -36,7 +36,7 @@ export default async function handler (req, res) {
     }
 
     // exchange the code for a session token
-    const tokenData = await exchangeCode(domainName, code, verifier)
+    const tokenData = await exchangeCode(parsedDomain.hostname, code, verifier)
     // set the session cookie
     res.appendHeader('Set-Cookie', cookie.serialize(SESSION_COOKIE, tokenData.sessionToken, cookieOptions()))
 
