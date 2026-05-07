@@ -1,19 +1,3 @@
-// stacker.news/api/auth/domains/code GET
-// it's the callbackUrl for the "Login" button on the main domain, coming from the custom domain
-// receives domainName and challenge (hashed verifier)
-// gets the current session from the main domain (we're here)
-// creates a code and stores it in the DB::domainAuthRequest with the following fields:
-// {
-//   domainId: domainId
-//   challenge: challenge
-//   code: code
-//   userId: userId
-//   expiresAt: expiresAt
-// }
-//
-// redirects to the custom domain /api/auth/domains/verify with the code as query param
-// e.g. https://pizza.com/api/auth/domains/verify?code=1234567890
-
 import models from '@/api/models'
 import { parseSafeHost, formatHost, safeRedirectPath } from '@/lib/safe-url'
 import { multiAuthMiddleware } from '@/lib/auth'
