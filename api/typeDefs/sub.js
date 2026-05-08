@@ -36,6 +36,8 @@ export default gql`
       billingType: String!, billingAutoRenew: Boolean!,
       sendProtocolId: Int,
       nsfw: Boolean!): PayIn!
+    upsertSubTheme(subName: String!, input: SubThemeInput!): SubTheme
+    upsertDomainSeo(subName: String!, input: DomainSeoInput!): DomainSeo
   }
 
   type Sub {
@@ -63,6 +65,8 @@ export default gql`
     nsfw: Boolean!
     nitems(when: String, from: String, to: String): Int!
     meSubscription: Boolean!
+    theme: SubTheme
+    domainSeo: DomainSeo
 
     optional: SubOptional!
   }
@@ -74,5 +78,45 @@ export default gql`
     stacked(when: String, from: String, to: String): Int
     spent(when: String, from: String, to: String): Int
     revenue(when: String, from: String, to: String): Int
+  }
+
+  enum ThemeMode {
+    LIGHT
+    DARK
+    SYSTEM
+  }
+
+  type SubTheme {
+    subName: String!
+    primaryColor: String
+    secondaryColor: String
+    linkColor: String
+    brandColor: String
+    defaultMode: ThemeMode
+    logoId: Int
+  }
+
+  input SubThemeInput {
+    primaryColor: String
+    secondaryColor: String
+    linkColor: String
+    brandColor: String
+    logoId: Int
+    defaultMode: ThemeMode
+  }
+
+  type DomainSeo {
+    domainId: Int!
+    title: String
+    tagline: String
+    ogImageId: Int
+    faviconId: Int
+  }
+
+  input DomainSeoInput {
+    title: String
+    tagline: String
+    ogImageId: Int
+    faviconId: Int
   }
 `

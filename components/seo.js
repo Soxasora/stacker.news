@@ -2,12 +2,17 @@ import { NextSeo } from 'next-seo'
 import { useRouter } from 'next/router'
 import removeMd from 'remove-markdown'
 import { numWithUnits } from '@/lib/format'
+import { useDomainSeo } from '@/components/domain-seo'
+import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 
 export function SeoSearch ({ sub }) {
   const router = useRouter()
+  const seo = useDomainSeo()
+  const brandOgImageUrl = seo?.ogImageId ? `${PUBLIC_MEDIA_URL}/${seo.ogImageId}` : null
+  const siteName = seo?.title || 'stacker news'
   const subStr = sub ? ` ~${sub}` : ''
-  const title = `${router.query.q || 'search'} \\ stacker news${subStr}`
-  const desc = `SN${subStr} search: ${router.query.q || ''}`
+  const title = `${router.query.q || 'search'} \\ ${siteName}${subStr}`
+  const desc = `${seo?.title ? seo.title : 'SN'}${subStr} search: ${router.query.q || ''}`
 
   return (
     <NextSeo
@@ -18,15 +23,18 @@ export function SeoSearch ({ sub }) {
         description: desc,
         images: [
           {
-            url: 'https://capture.stacker.news' + router.asPath
+            url: brandOgImageUrl || ('https://capture.stacker.news' + router.asPath)
           }
         ],
-        site_name: 'Stacker News'
+        site_name: seo?.title || 'Stacker News'
       }}
-      twitter={{
-        site: '@stacker_news',
-        cardType: 'summary_large_image'
-      }}
+      // twitter is not supported for custom domains yet
+      twitter={seo
+        ? undefined
+        : {
+            site: '@stacker_news',
+            cardType: 'summary_large_image'
+          }}
     />
   )
 }
@@ -38,11 +46,16 @@ export function SeoSearch ({ sub }) {
 
 export default function Seo ({ sub, item, user }) {
   const router = useRouter()
+  const seo = useDomainSeo()
+  const brandOgImageUrl = seo?.ogImageId ? `${PUBLIC_MEDIA_URL}/${seo.ogImageId}` : null
+  // On a branded custom domain, swap "stacker news" for the owner-chosen
+  // title in <title> + og:site_name. Falls back transparently elsewhere.
+  const siteName = seo?.title || 'stacker news'
   const pathNoQuery = router.asPath.split('?')[0]
   const defaultTitle = pathNoQuery.slice(1)
-  const snStr = `stacker news${sub ? ` ~${sub}` : ''}`
-  let fullTitle = `${defaultTitle && `${defaultTitle} \\ `}stacker news`
-  let desc = 'moderating forums with money'
+  const snStr = `${siteName}${sub ? ` ~${sub}` : ''}`
+  let fullTitle = `${defaultTitle && `${defaultTitle} \\ `}${siteName}`
+  let desc = seo?.tagline || 'moderating forums with money'
   if (item) {
     if (item.title) {
       fullTitle = `${item.title} \\ ${snStr}`
@@ -81,10 +94,11 @@ export default function Seo ({ sub, item, user }) {
         description: desc,
         images: [
           {
-            url: 'https://capture.stacker.news' + pathNoQuery
+            // precedence to `/item` capture over brand og:image
+            url: item ? ('https://capture.stacker.news' + pathNoQuery) : (brandOgImageUrl || ('https://capture.stacker.news' + pathNoQuery))
           }
         ],
-        site_name: 'Stacker News'
+        site_name: siteName
       }}
       twitter={{
         site: '@stacker_news',

@@ -6,7 +6,7 @@ import BackArrow from '../../svgs/arrow-left-line.svg'
 import { useCallback, useEffect, useState } from 'react'
 import Price from '../price'
 import SubSelect from '../sub-select'
-import { USER_ID } from '../../lib/constants'
+import { PUBLIC_MEDIA_URL, USER_ID } from '../../lib/constants'
 import NoteIcon from '../../svgs/notification-4-fill.svg'
 import { useMe } from '../me'
 import { abbrNum } from '../../lib/format'
@@ -17,6 +17,7 @@ import LightningIcon from '../../svgs/bolt.svg'
 import SearchIcon from '../../svgs/search-line.svg'
 import classNames from 'classnames'
 import SnIcon from '@/svgs/sn.svg'
+import { useSubTheme } from '../territory-theme'
 import { useHasNewNotes } from '../use-has-new-notes'
 import { useWalletIndicator } from '@/wallets/client/hooks'
 import SwitchAccountList, { nextAccount, useAccounts, useIsLurker } from '@/components/account'
@@ -25,9 +26,21 @@ import { ObstacleButtons } from '@/components/obstacle'
 import { numWithUnits } from '@/lib/format'
 
 export function Brand ({ className }) {
+  const theme = useSubTheme()
+  const logoUrl = theme?.logoId ? `${PUBLIC_MEDIA_URL}/${theme.logoId}` : null
   return (
     <Navbar.Brand as={Link} href='/' className={classNames(styles.brand, className)}>
-      <SnIcon width={36} height={36} />
+      {logoUrl
+        ? (
+          <img
+            src={logoUrl}
+            alt=''
+            width={36}
+            height={36}
+            style={{ objectFit: 'contain' }}
+          />
+          )
+        : <SnIcon width={36} height={36} />}
     </Navbar.Brand>
   )
 }

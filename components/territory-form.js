@@ -15,6 +15,8 @@ import { abbrNum } from '@/lib/format'
 import { purchasedType } from '@/lib/territory'
 import { SUB } from '@/fragments/subs'
 import TerritoryDomains, { useDomain } from './territory-domains'
+import { TerritoryThemeForm } from './territory-theme'
+import { TerritoryDomainSeoForm } from './domain-seo'
 import Link from 'next/link'
 import usePayInMutation from '@/components/payIn/hooks/use-pay-in-mutation'
 import { UNARCHIVE_TERRITORY, UPSERT_SUB } from '@/fragments/payIn'
@@ -314,10 +316,22 @@ export default function TerritoryForm ({ sub }) {
             <div className='w-100'>
               <AccordianItem
                 header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>advanced</div>}
-                body={<TerritoryDomains sub={sub} />}
+                body={
+                  <>
+                    <TerritoryDomains sub={sub} />
+                    <AccordianItem
+                      header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>appearance</div>}
+                      body={<TerritoryThemeForm sub={sub} />}
+                    />
+                    <AccordianItem
+                      header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>domain SEO</div>}
+                      body={<TerritoryDomainSeoForm sub={sub} />}
+                    />
+                  </>
+                }
               />
             </div>}
-          {sub && domain && <Link className='text-muted w-100' href={`${process.env.NEXT_PUBLIC_URL}/~${sub.name}/edit`}>domain settings on stacker.news <LinkExternal width={16} height={16} /></Link>}
+          {sub && domain && <Link className='text-muted w-100' href={`${process.env.NEXT_PUBLIC_URL}/~${sub.name}/edit`}>domain, theme &amp; SEO settings on stacker.news <LinkExternal width={16} height={16} /></Link>}
         </>}
     </FeeButtonProvider>
   )

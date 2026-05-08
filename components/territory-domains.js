@@ -34,7 +34,7 @@ export const DomainProvider = ({ domain: ssrDomain, children }) => {
   )
 }
 
-/** returns domain data with this shape: { domainName, subName } */
+/** returns domain data with this shape: { domainName, subName, id, tokenVersion } */
 export const useDomain = () => useContext(DomainContext)
 
 export function usePrefix (sub) {

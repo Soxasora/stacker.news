@@ -19,7 +19,7 @@ import { satsToMsats } from '@/lib/format'
 import { MULTI_AUTH_ANON, MULTI_AUTH_LIST, MULTI_AUTH_POINTER, multiAuthMiddleware } from '@/lib/auth'
 import { lexicalStateLoader } from '@/lib/lexical/server/loader'
 import { createUserLoader, createSubLoader } from '@/api/loaders'
-import { getDomainMapping, SN_MAIN_DOMAIN } from '@/lib/domains'
+import { getDomainMapping, getSubTheme, SN_MAIN_DOMAIN } from '@/lib/domains'
 
 export default async function getSSRApolloClient ({ req, res, me = null }) {
   // switch session cookie before getting session on SSR
@@ -170,9 +170,13 @@ export function getGetServerSideProps (
 
     const client = await getSSRApolloClient({ req, res })
 
-    // inject custom domain data if any
+    // inject custom domain data if any. theme + seo travel as independent
+    // props so consumers (Seo, Brand, Favicon) read only what they need and
+    // future "theme on every sub" becomes a one-liner gate change.
     const host = req.headers.host
     const domain = host ? await getDomainMapping(host) : null
+    const theme = domain ? await getSubTheme(domain.subName) : null
+    const seo = domain?.seo ?? null
 
     let { data: { me } } = await client.query({ query: ME })
 
@@ -241,6 +245,8 @@ export function getGetServerSideProps (
       props: {
         ...props,
         domain,
+        theme,
+        seo,
         me,
         price,
         blockHeight,

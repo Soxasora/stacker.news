@@ -194,6 +194,18 @@ It detaches the ACM certificate from our ALB listener and then deletes the ACM c
 
 It's a necessary step to ensure that we don't waste AWS resources and also provide safety regarding the custom domain access to Stacker News.
 
+# Per-Territory Branding
+
+Per-territory branding is split into two independent concerns:
+
+- **`SubTheme`** — the territory's visual identity (colors, logo, default color mode).
+- **`DomainSeo`** — how the custom domain presents itself externally (page title, tagline, og:image, favicon).
+
+See [`docs/dev/territory-branding.md`](./territory-branding.md) for the full data model, first-paint pipeline, caching strategy, edge cases, and touchpoints.
+
+`DomainSeo` is FK'd to `Domain` and rides inline in `domainsMappingsCache`, so SSR resolves both the routing data and the SEO row in a single cache lookup. `SubTheme` lives in its own per-sub cache (`subThemeCache`) and is fetched only when an active custom domain is in scope today; flipping that gate would extend theming to every sub.
+
+
 # Auth Sync
 
 Cross-domain JWT authentication is a browser boundary problem: the main SN session cookie cannot be read or set by an `ACTIVE` custom domain. The flow uses a short-lived verifier/challenge pair, a one-time DB code, and a domain-bound JWT.
