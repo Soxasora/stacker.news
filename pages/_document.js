@@ -1,5 +1,8 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document'
 import Script from 'next/script'
+import { getDomainCustomization } from '@/lib/domains'
+import { buildSubThemeCss } from '@/lib/domains/custom-css'
+import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 
 class MyDocument extends Document {
   // https://nextjs.org/docs/pages/building-your-application/routing/custom-document#customizing-renderpage
@@ -19,15 +22,28 @@ class MyDocument extends Document {
     const csp = ctx.res?.getHeaders()['content-security-policy']
     const nonce = csp ? /nonce-([a-zA-Z0-9]{48})/.exec(csp)?.[1] : undefined
 
+    const domainBrand = await getDomainCustomization(ctx.req.headers.host).catch(error => {
+      console.error('[domains::_document] error getting domain branding', error)
+      return { theme: null, seo: null }
+    })
+
     const initialProps = await Document.getInitialProps(ctx)
 
-    return { ...initialProps, nonce }
+    return { ...initialProps, nonce, theme: domainBrand.theme, seo: domainBrand.seo }
   }
 
   render () {
-    const { nonce } = this.props
+    const { nonce, theme, seo } = this.props
+
+    // custom domain SEO and territory theme
+    const themeCss = buildSubThemeCss(theme)
+    const defaultMode = theme?.defaultMode || 'SYSTEM'
+    const logoUrl = theme?.logoId ? `${PUBLIC_MEDIA_URL}/${theme.logoId}` : null
+    const faviconUrl = seo?.faviconId ? `${PUBLIC_MEDIA_URL}/${seo.faviconId}` : null
+    const ogImageUrl = seo?.ogImageId ? `${PUBLIC_MEDIA_URL}/${seo.ogImageId}` : null
+
     return (
-      <Html lang='en' data-scroll-behavior='smooth'>
+      <Html lang='en' data-scroll-behavior='smooth' data-sn-default-mode={defaultMode}>
         <Head nonce={nonce}>
           <link rel='manifest' href='/api/site.webmanifest' />
           <link rel='preload' href={`${process.env.NEXT_PUBLIC_ASSET_PREFIX}/Lightningvolt-xoqm.woff2`} as='font' type='font/woff2' crossOrigin='' />
@@ -45,11 +61,30 @@ class MyDocument extends Document {
               }`
             }}
           />
+          {themeCss && (
+            <style
+              id='sn-branding-theme'
+              nonce={nonce}
+              dangerouslySetInnerHTML={{ __html: themeCss }}
+            />
+          )}
+          {faviconUrl && (
+            <link id='sn-branding-favicon' rel='icon' href={faviconUrl} />
+          )}
+          {logoUrl && (
+            <link rel='preload' as='image' href={logoUrl} />
+          )}
+          {ogImageUrl && (
+            <meta property='og:image' content={ogImageUrl} />
+          )}
+          {seo?.title && (
+            <meta property='og:site_name' content={seo.title} />
+          )}
           <meta name='apple-mobile-web-app-capable' content='yes' />
           <meta name='mobile-web-app-capable' content='yes' />
           <meta name='theme-color' content='#121214' />
           <link rel='apple-touch-icon' href='/icons/icon_x192.png' />
-          <Script id='dark-mode-js' strategy='beforeInteractive'>
+          <Script id='dark-mode-js' strategy='beforeInteractive' nonce={nonce}>
             {`const handleThemeChange = (dark) => {
                 const root = window.document.documentElement
                 root.setAttribute('data-bs-theme', dark ? 'dark' : 'light')
@@ -72,7 +107,15 @@ class MyDocument extends Document {
 
                 if (localStorageExists) {
                   return { user: true, dark: localStorageTheme }
-                } else if (supportsColorSchemeQuery) {
+                }
+
+                // a custom domain territory owner can pin a default mode for the territory
+                // user toggling still takes precedence
+                const subThemeDefaultMode = window.document.documentElement.dataset.snDefaultMode
+                if (subThemeDefaultMode === 'DARK') return { user: false, dark: true }
+                if (subThemeDefaultMode === 'LIGHT') return { user: false, dark: false }
+
+                if (supportsColorSchemeQuery) {
                   return { user: false, dark: mql.matches }
                 }
               }
