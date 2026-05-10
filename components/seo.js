@@ -2,13 +2,13 @@ import { NextSeo } from 'next-seo'
 import { useRouter } from 'next/router'
 import removeMd from 'remove-markdown'
 import { numWithUnits } from '@/lib/format'
-import { useDomainSeo } from './territory-domains'
+import { useDomain } from './territory-domains'
 import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 
 // SEO for Stacker News or a custom domain
 // path is the URL path used for the dynamic capture fallback image
-function useSeoBranding (path) {
-  const domainSeo = useDomainSeo()
+function useCustomSeo (path) {
+  const { seo: domainSeo } = useDomain()
 
   const brand = domainSeo?.title ?? 'stacker news'
   const siteName = domainSeo?.title ?? 'Stacker News'
@@ -28,7 +28,7 @@ function useSeoBranding (path) {
 
 export function SeoSearch ({ sub }) {
   const router = useRouter()
-  const { domainSeo, brand, siteName, ogImageUrl, twitter } = useSeoBranding(router.asPath)
+  const { domainSeo, brand, siteName, ogImageUrl, twitter } = useCustomSeo(router.asPath)
 
   const subStr = !domainSeo && sub ? ` ~${sub}` : ''
   const query = router.query.q || ''
@@ -64,7 +64,7 @@ export function SeoSearch ({ sub }) {
 export default function Seo ({ sub, item, user }) {
   const router = useRouter()
   const pathNoQuery = router.asPath.split('?')[0]
-  const { domainSeo, brand, siteName, tagline, ogImageUrl, twitter } = useSeoBranding(pathNoQuery)
+  const { domainSeo, brand, siteName, tagline, ogImageUrl, twitter } = useCustomSeo(pathNoQuery)
 
   const defaultTitle = pathNoQuery.slice(1)
   const snStr = `${brand}${!domainSeo && sub ? ` ~${sub}` : ''}`

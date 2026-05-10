@@ -1,6 +1,6 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document'
 import Script from 'next/script'
-import { getDomainCustomization } from '@/lib/domains'
+import { getDomainBranding } from '@/lib/domains'
 import { buildSubThemeCss } from '@/lib/domains/custom-css'
 import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 
@@ -22,7 +22,7 @@ class MyDocument extends Document {
     const csp = ctx.res?.getHeaders()['content-security-policy']
     const nonce = csp ? /nonce-([a-zA-Z0-9]{48})/.exec(csp)?.[1] : undefined
 
-    const domainBrand = await getDomainCustomization(ctx.req.headers.host).catch(error => {
+    const domainBrand = await getDomainBranding(ctx.req.headers.host).catch(error => {
       console.error('[domains::_document] error getting domain branding', error)
       return { theme: null, seo: null }
     })

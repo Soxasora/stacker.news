@@ -9,11 +9,11 @@ import { useEffect, useState, createContext, useContext, useMemo } from 'react'
 import Moon from '@/svgs/moon-fill.svg'
 import ClipboardLine from '@/svgs/clipboard-line.svg'
 import styles from './item.module.css'
+import { getSeoWithFallback } from '@/lib/domains/seo'
 
 const DOMAIN_POLL_INTERVAL_MS = 10_000
 
-// Domain context for custom domains
-const DomainContext = createContext({ domain: null })
+const DomainContext = createContext({ domain: null, seo: null })
 
 export const DomainProvider = ({ domain: ssrDomain, children }) => {
   const [domain, setDomain] = useState(ssrDomain ?? null)
@@ -25,7 +25,13 @@ export const DomainProvider = ({ domain: ssrDomain, children }) => {
     }
   }, [ssrDomain])
 
-  const value = useMemo(() => ({ domain }), [domain])
+  const seo = useMemo(
+    () => domain
+      ? getSeoWithFallback({ domainSeo: domain.domainSeo, sub: domain.sub })
+      : null,
+    [domain])
+
+  const value = useMemo(() => ({ domain, seo }), [domain, seo])
 
   return (
     <DomainContext.Provider value={value}>
@@ -34,13 +40,8 @@ export const DomainProvider = ({ domain: ssrDomain, children }) => {
   )
 }
 
-/** returns domain data with this shape: { domainName, subName } */
+/** returns domain data with this shape: { domainName, subName, domainSeo, sub: { name, desc } } */
 export const useDomain = () => useContext(DomainContext)
-
-export const useDomainSeo = () => {
-  const { domain } = useDomain()
-  return domain?.seo ?? null
-}
 
 export function usePrefix (sub) {
   const { domain } = useDomain()
