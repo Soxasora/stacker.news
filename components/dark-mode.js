@@ -22,7 +22,15 @@ const getTheme = () => {
 
   if (localStorageExists) {
     return { user: true, dark: localStorageTheme }
-  } else if (supportsColorSchemeQuery) {
+  }
+
+  // a custom domain territory owner can pin a default mode for the territory
+  // user toggling still takes precedence
+  const subThemeDefaultMode = window.document.documentElement.dataset.snDefaultMode
+  if (subThemeDefaultMode === 'DARK') return { user: false, dark: true }
+  if (subThemeDefaultMode === 'LIGHT') return { user: false, dark: false }
+
+  if (supportsColorSchemeQuery) {
     return { user: false, dark: mql.matches }
   }
 }
