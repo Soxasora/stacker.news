@@ -7,6 +7,7 @@ import {
   DOMAIN_VERIFICATION_RETRY_LIMIT,
   DOMAIN_BETA_IDS
 } from '@/lib/constants'
+import { resolveDomainSeo } from '@/lib/domains'
 
 export async function cleanDomainVerificationJobs (domainId, models) {
   // delete any existing domain verification job left
@@ -162,11 +163,18 @@ export default {
       // O(1) lookups by type, simpler checks for CNAME and ACM validation records
       return Object.fromEntries(domain.records.map(record => [record.type, record]))
     },
-    seo: async (domain, args, { models }) => {
+    seo: async (domain, args, { models, subLoader }) => {
       if (domain.seo !== undefined) {
         return domain.seo
       }
-      return await models.domainSeo.findUnique({ where: { domainId: domain.id } })
+
+      const [domainSeo, sub] = await Promise.all([
+        models.domainSeo.findUnique({ where: { domainId: domain.id } }),
+        subLoader.load(domain.subName)
+      ])
+
+      // if a custom title and tagline are set, use them, otherwise use the sub's name and description
+      return resolveDomainSeo({ domainSeo, sub })
     }
   }
 }
