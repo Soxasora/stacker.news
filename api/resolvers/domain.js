@@ -161,6 +161,12 @@ export default {
 
       // O(1) lookups by type, simpler checks for CNAME and ACM validation records
       return Object.fromEntries(domain.records.map(record => [record.type, record]))
+    },
+    seo: async (domain, args, { models }) => {
+      if (domain.seo !== undefined) {
+        return domain.seo
+      }
+      return await models.domainSeo.findUnique({ where: { domainId: domain.id } })
     }
   }
 }

@@ -63,6 +63,7 @@ export default gql`
     nsfw: Boolean!
     nitems(when: String, from: String, to: String): Int!
     meSubscription: Boolean!
+    theme: SubTheme
 
     optional: SubOptional!
   }
@@ -74,5 +75,28 @@ export default gql`
     stacked(when: String, from: String, to: String): Int
     spent(when: String, from: String, to: String): Int
     revenue(when: String, from: String, to: String): Int
+  }
+
+  enum ThemeMode {
+    LIGHT
+    DARK
+    SYSTEM
+  }
+
+  type SubTheme {
+    subName: String!
+    primaryColor: String
+    secondaryColor: String
+    linkColor: String
+    defaultMode: ThemeMode
+    logoId: Int
+  }
+
+  input SubThemeInput {
+    primaryColor: String
+    secondaryColor: String
+    linkColor: String
+    logoId: Int
+    defaultMode: ThemeMode
   }
 `

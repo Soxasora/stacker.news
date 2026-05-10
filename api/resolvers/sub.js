@@ -388,6 +388,12 @@ export default {
         console.error('error generating HTML from Lexical State:', error)
         return null
       }
+    },
+    theme: async (sub, args, { models }) => {
+      if (sub.theme !== undefined) {
+        return sub.theme
+      }
+      return await models.subTheme.findUnique({ where: { subName: sub.name } })
     }
   }
 }
