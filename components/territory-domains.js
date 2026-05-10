@@ -37,6 +37,11 @@ export const DomainProvider = ({ domain: ssrDomain, children }) => {
 /** returns domain data with this shape: { domainName, subName } */
 export const useDomain = () => useContext(DomainContext)
 
+export const useDomainSeo = () => {
+  const { domain } = useDomain()
+  return domain?.seo ?? null
+}
+
 export function usePrefix (sub) {
   const { domain } = useDomain()
   if (domain) return ''
