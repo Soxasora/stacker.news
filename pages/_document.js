@@ -18,14 +18,20 @@ class MyDocument extends Document {
         enhanceComponent: (Component) => Component
       })
 
-    // response is not available on offline page for example
-    const csp = ctx.res?.getHeaders()['content-security-policy']
+    // req/res are not available on statically optimized pages (e.g. /offline, /404, /500)
+    const csp = ctx.res?.getHeaders?.()['content-security-policy']
     const nonce = csp ? /nonce-([a-zA-Z0-9]{48})/.exec(csp)?.[1] : undefined
 
-    const domainBrand = await getDomainBranding(ctx.req.headers.host).catch(error => {
-      console.error('[domains::_document] error getting domain branding', error)
-      return { theme: null, seo: null }
-    })
+    const host = ctx.req?.headers?.host
+    let domainBrand = null
+    if (host) {
+      try {
+        domainBrand = await getDomainBranding(host)
+      } catch (error) {
+        console.error('[domains::_document] error getting domain branding', error)
+        domainBrand = null
+      }
+    }
 
     const initialProps = await Document.getInitialProps(ctx)
 
