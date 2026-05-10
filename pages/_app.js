@@ -22,6 +22,8 @@ import { ChainFeeProvider } from '@/components/chain-fee.js'
 import dynamic from 'next/dynamic'
 import { HasNewNotesProvider } from '@/components/use-has-new-notes'
 import { DomainProvider } from '@/components/territory-domains'
+import { SubThemeProvider } from '@/components/territory-theme'
+import { DomainSeoProvider } from '@/components/domain-seo'
 import { WalletsProvider } from '@/wallets/client/hooks'
 import FaviconProvider from '@/components/favicon'
 import { CookiesProvider } from '@/components/use-cookie'
@@ -103,7 +105,7 @@ export default function MyApp ({ Component, pageProps: { ...props } }) {
     If we are on the client, we populate the apollo cache with the
     ssr data
   */
-  const { apollo, ssrData, ssrPublicCookies, me, price, blockHeight, chainFee, domain, ...otherProps } = props
+  const { apollo, ssrData, ssrPublicCookies, me, price, blockHeight, chainFee, domain, theme, seo, ...otherProps } = props
   useEffect(() => {
     writeQuery(client, apollo, ssrData)
   }, [client, apollo, ssrData])
@@ -117,34 +119,38 @@ export default function MyApp ({ Component, pageProps: { ...props } }) {
         <PlausibleProvider>
           <ApolloProvider client={client}>
             <DomainProvider domain={domain}>
-              <MeProvider me={me}>
-                <CookiesProvider ssrPublicCookies={ssrPublicCookies}>
-                  <WalletsProvider>
-                    <HasNewNotesProvider>
-                      <FaviconProvider>
-                        <ServiceWorkerProvider>
-                          <PriceProvider price={price}>
-                            <AnimationProvider>
-                              <ToastProvider>
-                                <ShowModalProvider>
-                                  <BlockHeightProvider blockHeight={blockHeight}>
-                                    <ChainFeeProvider chainFee={chainFee}>
-                                      <ErrorBoundary>
-                                        <Component ssrData={ssrData} {...otherProps} />
-                                        {!router?.query?.disablePrompt && <PWAPrompt copyBody='This website has app functionality. Add it to your home screen to use it in fullscreen and receive notifications. In Safari:' promptOnVisit={2} />}
-                                      </ErrorBoundary>
-                                    </ChainFeeProvider>
-                                  </BlockHeightProvider>
-                                </ShowModalProvider>
-                              </ToastProvider>
-                            </AnimationProvider>
-                          </PriceProvider>
-                        </ServiceWorkerProvider>
-                      </FaviconProvider>
-                    </HasNewNotesProvider>
-                  </WalletsProvider>
-                </CookiesProvider>
-              </MeProvider>
+              <SubThemeProvider theme={theme}>
+                <DomainSeoProvider seo={seo}>
+                  <MeProvider me={me}>
+                    <CookiesProvider ssrPublicCookies={ssrPublicCookies}>
+                      <WalletsProvider>
+                        <HasNewNotesProvider>
+                          <FaviconProvider>
+                            <ServiceWorkerProvider>
+                              <PriceProvider price={price}>
+                                <AnimationProvider>
+                                  <ToastProvider>
+                                    <ShowModalProvider>
+                                      <BlockHeightProvider blockHeight={blockHeight}>
+                                        <ChainFeeProvider chainFee={chainFee}>
+                                          <ErrorBoundary>
+                                            <Component ssrData={ssrData} {...otherProps} />
+                                            {!router?.query?.disablePrompt && <PWAPrompt copyBody='This website has app functionality. Add it to your home screen to use it in fullscreen and receive notifications. In Safari:' promptOnVisit={2} />}
+                                          </ErrorBoundary>
+                                        </ChainFeeProvider>
+                                      </BlockHeightProvider>
+                                    </ShowModalProvider>
+                                  </ToastProvider>
+                                </AnimationProvider>
+                              </PriceProvider>
+                            </ServiceWorkerProvider>
+                          </FaviconProvider>
+                        </HasNewNotesProvider>
+                      </WalletsProvider>
+                    </CookiesProvider>
+                  </MeProvider>
+                </DomainSeoProvider>
+              </SubThemeProvider>
             </DomainProvider>
           </ApolloProvider>
         </PlausibleProvider>

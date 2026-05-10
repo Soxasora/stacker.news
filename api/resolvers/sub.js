@@ -1,12 +1,13 @@
 import { timeUnitForRange, whenRange } from '@/lib/time'
-import { validateSchema, territorySchema } from '@/lib/validate'
+import { validateSchema, territorySchema, subThemeSchema, domainSeoSchema } from '@/lib/validate'
 import { decodeCursor, LIMIT, nextCursorEncoded } from '@/lib/cursor'
 import { notifyTerritoryTransfer } from '@/lib/webPush'
 import pay from '../payIn'
-import { GqlAuthenticationError, GqlInputError } from '@/lib/error'
+import { GqlAuthenticationError, GqlAuthorizationError, GqlInputError } from '@/lib/error'
 import { uploadIdsFromText } from './upload'
 import { Prisma } from '@prisma/client'
 import { lexicalHTMLGenerator } from '@/lib/lexical/server/html'
+import { DOMAIN_BETA_IDS } from '@/lib/constants'
 
 export async function getSub (parent, { name }, { models, me }) {
   if (!name) return null
@@ -345,6 +346,51 @@ export default {
       data.uploadIds = uploadIdsFromText(data.desc)
 
       return await pay('TERRITORY_UNARCHIVE', data, { me, models, lnd, sendProtocolId })
+    },
+    upsertSubTheme: async (parent, { subName, input }, { me, models }) => {
+      const sub = await assertSubOwnedByMe({ subName, me, models })
+
+      await validateSchema(subThemeSchema, input)
+      await assertUploadsOwnedByMe({ ids: [input.logoId], me, models })
+
+      const data = {
+        primaryColor: input.primaryColor || null,
+        secondaryColor: input.secondaryColor || null,
+        linkColor: input.linkColor || null,
+        brandColor: input.brandColor || null,
+        logoId: input.logoId || null,
+        defaultMode: input.defaultMode || null
+      }
+
+      return await models.subTheme.upsert({
+        where: { subName: sub.name },
+        create: { subName: sub.name, ...data },
+        update: data
+      })
+    },
+    upsertDomainSeo: async (parent, { subName, input }, { me, models }) => {
+      const sub = await assertSubOwnedByMe({ subName, me, models })
+
+      const domain = await models.domain.findUnique({ where: { subName: sub.name } })
+      if (!domain) {
+        throw new GqlInputError('SEO settings require a custom domain')
+      }
+
+      await validateSchema(domainSeoSchema, input)
+      await assertUploadsOwnedByMe({ ids: [input.ogImageId, input.faviconId], me, models })
+
+      const data = {
+        title: input.title || null,
+        tagline: input.tagline || null,
+        ogImageId: input.ogImageId || null,
+        faviconId: input.faviconId || null
+      }
+
+      return await models.domainSeo.upsert({
+        where: { domainId: domain.id },
+        create: { domainId: domain.id, ...data },
+        update: data
+      })
     }
   },
   Sub: {
@@ -388,7 +434,59 @@ export default {
         console.error('error generating HTML from Lexical State:', error)
         return null
       }
+    },
+    theme: async (sub, args, { models }) => {
+      if (sub.theme !== undefined) {
+        return sub.theme
+      }
+      return await models.subTheme.findUnique({ where: { subName: sub.name } })
+    },
+    domainSeo: async (sub, args, { models }) => {
+      if (sub.domainSeo !== undefined) {
+        return sub.domainSeo
+      }
+      const domain = await models.domain.findUnique({
+        where: { subName: sub.name },
+        select: { seo: true }
+      })
+      return domain?.seo ?? null
     }
+  }
+}
+
+// shared ownership + beta gating for theme/SEO mutations
+async function assertSubOwnedByMe ({ subName, me, models }) {
+  if (!me) {
+    throw new GqlAuthenticationError()
+  }
+  if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
+    throw new GqlAuthorizationError('not allowed')
+  }
+  const sub = await models.sub.findUnique({ where: { name: subName } })
+  if (!sub) {
+    throw new GqlInputError('sub not found')
+  }
+  if (sub.userId !== Number(me.id)) {
+    throw new GqlAuthorizationError('you do not own this sub')
+  }
+  return sub
+}
+
+// referenced uploads must exist and belong to the caller
+// (assets are free, uploaded via the avatar route which already enforces type/size)
+async function assertUploadsOwnedByMe ({ ids, me, models }) {
+  const referencedIds = [...new Set(ids.filter(Boolean))]
+  if (referencedIds.length === 0) return
+
+  const uploads = await models.upload.findMany({
+    where: { id: { in: referencedIds } },
+    select: { id: true, userId: true }
+  })
+  if (uploads.length !== referencedIds.length) {
+    throw new GqlInputError('upload not found')
+  }
+  if (uploads.some(u => u.userId !== Number(me.id))) {
+    throw new GqlInputError('you do not own all referenced uploads')
   }
 }
 

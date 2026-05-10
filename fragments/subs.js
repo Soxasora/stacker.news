@@ -13,6 +13,24 @@ const STREAK_FIELDS = gql`
   }
 `
 
+export const SUB_THEME_FIELDS = gql`
+  fragment SubThemeFields on SubTheme {
+    primaryColor
+    secondaryColor
+    linkColor
+    brandColor
+    defaultMode
+    logoId
+  }`
+
+export const DOMAIN_SEO_FIELDS = gql`
+  fragment DomainSeoFields on DomainSeo {
+    title
+    tagline
+    ogImageId
+    faviconId
+  }`
+
 export const SUB_FIELDS = gql`
   fragment SubFields on Sub {
     name
@@ -35,6 +53,22 @@ export const SUB_FIELDS = gql`
     nsfw
   }`
 
+export const UPSERT_SUB_THEME = gql`
+  ${SUB_THEME_FIELDS}
+  mutation UpsertSubTheme($subName: String!, $input: SubThemeInput!) {
+    upsertSubTheme(subName: $subName, input: $input) {
+      ...SubThemeFields
+    }
+  }`
+
+export const UPSERT_DOMAIN_SEO = gql`
+  ${DOMAIN_SEO_FIELDS}
+  mutation UpsertDomainSeo($subName: String!, $input: DomainSeoInput!) {
+    upsertDomainSeo(subName: $subName, input: $input) {
+      ...DomainSeoFields
+    }
+  }`
+
 export const SUB_FULL_FIELDS = gql`
   ${SUB_FIELDS}
   ${STREAK_FIELDS}
@@ -55,6 +89,30 @@ export const SUB = gql`
   query Sub($sub: String) {
     sub(name: $sub) {
       ...SubFields
+    }
+  }`
+
+export const SUB_THEME = gql`
+  ${SUB_THEME_FIELDS}
+
+  query SubTheme($sub: String) {
+    sub(name: $sub) {
+      name
+      theme {
+        ...SubThemeFields
+      }
+    }
+  }`
+
+export const DOMAIN_SEO = gql`
+  ${DOMAIN_SEO_FIELDS}
+
+  query DomainSeo($sub: String) {
+    sub(name: $sub) {
+      name
+      domainSeo {
+        ...DomainSeoFields
+      }
     }
   }`
 
