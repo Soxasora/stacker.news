@@ -389,6 +389,17 @@ export default {
         return null
       }
     },
+    domain: async (sub, args, { models }) => {
+      if (sub.domain !== undefined) {
+        return sub.domain
+      }
+
+      // domain essentials
+      return await models.domain.findUnique({
+        where: { subName: sub.name },
+        select: { domainName: true, status: true }
+      })
+    },
     theme: async (sub, args, { models }) => {
       if (sub.theme !== undefined) {
         return sub.theme

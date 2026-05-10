@@ -183,7 +183,7 @@ export default function CustomDomainForm ({ sub }) {
 
   const toaster = useToast()
 
-  const { domainName, status } = data?.domain || {}
+  const { domainName, status } = data?.domain || sub?.domain || {}
   const polling = status === 'PENDING'
 
   // Update the custom domain

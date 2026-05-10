@@ -33,6 +33,10 @@ export const SUB_FIELDS = gql`
     meMuteSub
     meSubscription
     nsfw
+    domain {
+      domainName
+      status
+    }
   }`
 
 export const SUB_FULL_FIELDS = gql`
