@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import removeMd from 'remove-markdown'
 import { numWithUnits } from '@/lib/format'
 import { useDomain } from './territory-domains'
-import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 
 // SEO for Stacker News or a custom domain
 // path is the URL path used for the dynamic capture fallback image
@@ -13,22 +12,18 @@ function useCustomSeo (path) {
   const brand = domainSeo?.title ?? 'stacker news'
   const siteName = domainSeo?.title ?? 'Stacker News'
   const tagline = domainSeo?.tagline ?? 'moderating forums with money'
-  // fallback to capture.stacker.news for custom domains
-  const ogImageUrl = domainSeo?.ogImageId
-    ? `${PUBLIC_MEDIA_URL}/${domainSeo.ogImageId}`
-    : 'https://capture.stacker.news' + path
 
   // domain seo doesn't support twitter yet
   const twitter = domainSeo
     ? { cardType: 'summary_large_image' }
     : { site: '@stacker_news', cardType: 'summary_large_image' }
 
-  return { domainSeo, brand, siteName, tagline, ogImageUrl, twitter }
+  return { domainSeo, brand, siteName, tagline, twitter }
 }
 
 export function SeoSearch ({ sub }) {
   const router = useRouter()
-  const { domainSeo, brand, siteName, ogImageUrl, twitter } = useCustomSeo(router.asPath)
+  const { domainSeo, brand, siteName, twitter } = useCustomSeo(router.asPath)
 
   const subStr = !domainSeo && sub ? ` ~${sub}` : ''
   const query = router.query.q || ''
@@ -46,7 +41,7 @@ export function SeoSearch ({ sub }) {
         description: desc,
         images: [
           {
-            url: ogImageUrl
+            url: 'https://capture.stacker.news' + router.asPath
           }
         ],
         site_name: siteName
@@ -64,7 +59,7 @@ export function SeoSearch ({ sub }) {
 export default function Seo ({ sub, item, user }) {
   const router = useRouter()
   const pathNoQuery = router.asPath.split('?')[0]
-  const { domainSeo, brand, siteName, tagline, ogImageUrl, twitter } = useCustomSeo(pathNoQuery)
+  const { domainSeo, brand, siteName, tagline, twitter } = useCustomSeo(pathNoQuery)
 
   const defaultTitle = pathNoQuery.slice(1)
   const snStr = `${brand}${!domainSeo && sub ? ` ~${sub}` : ''}`
@@ -110,7 +105,7 @@ export default function Seo ({ sub, item, user }) {
         description: desc,
         images: [
           {
-            url: ogImageUrl
+            url: 'https://capture.stacker.news' + router.asPath
           }
         ],
         site_name: siteName

@@ -46,7 +46,6 @@ class MyDocument extends Document {
     const defaultMode = theme?.defaultMode || 'SYSTEM'
     const logoUrl = theme?.logoId ? `${PUBLIC_MEDIA_URL}/${theme.logoId}` : null
     const faviconUrl = seo?.faviconId ? `${PUBLIC_MEDIA_URL}/${seo.faviconId}` : null
-    const ogImageUrl = seo?.ogImageId ? `${PUBLIC_MEDIA_URL}/${seo.ogImageId}` : null
 
     return (
       <Html lang='en' data-scroll-behavior='smooth' data-sn-default-mode={defaultMode}>
@@ -79,9 +78,6 @@ class MyDocument extends Document {
           )}
           {logoUrl && (
             <link rel='preload' as='image' href={logoUrl} />
-          )}
-          {ogImageUrl && (
-            <meta property='og:image' content={ogImageUrl} />
           )}
           {seo?.title && (
             <meta property='og:site_name' content={seo.title} />

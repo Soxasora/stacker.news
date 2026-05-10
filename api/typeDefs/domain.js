@@ -64,14 +64,12 @@ export default gql`
     domainId: Int!
     title: String
     tagline: String
-    ogImageId: Int
     faviconId: Int
   }
 
   input DomainSeoInput {
     title: String
     tagline: String
-    ogImageId: Int
     faviconId: Int
   }
 
