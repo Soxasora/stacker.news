@@ -29,7 +29,7 @@ class MyDocument extends Document {
 
     const initialProps = await Document.getInitialProps(ctx)
 
-    return { ...initialProps, nonce, theme: domainBrand.theme, seo: domainBrand.seo }
+    return { ...initialProps, nonce, theme: domainBrand?.theme, seo: domainBrand?.seo }
   }
 
   render () {
