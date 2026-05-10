@@ -333,7 +333,6 @@ model Upload {
   ItemUpload   ItemUpload[]
   uploadPayIns UploadPayIn[]
   subThemeLogos SubTheme[] @relation("SubThemeLogo")
-  domainSeoOgImages DomainSeo[] @relation("DomainSeoOgImage")
   domainSeoFavicons DomainSeo[] @relation("DomainSeoFavicon")
 
   @@index([createdAt], map: "Upload.created_at_index")
@@ -1021,14 +1020,11 @@ model DomainSeo {
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
   title      String?
   tagline    String?
-  ogImageId  Int?
   faviconId  Int?
 
   domain     Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
-  ogImage    Upload?  @relation("DomainSeoOgImage", fields: [ogImageId], references: [id], onDelete: SetNull)
   favicon    Upload?  @relation("DomainSeoFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
 
-  @@index([ogImageId])
   @@index([faviconId])
 }
 
