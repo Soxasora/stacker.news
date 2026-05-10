@@ -332,6 +332,9 @@ model Upload {
   User         User[]
   ItemUpload   ItemUpload[]
   uploadPayIns UploadPayIn[]
+  subThemeLogos SubTheme[] @relation("SubThemeLogo")
+  domainSeoOgImages DomainSeo[] @relation("DomainSeoOgImage")
+  domainSeoFavicons DomainSeo[] @relation("DomainSeoFavicon")
 
   @@index([createdAt], map: "Upload.created_at_index")
   @@index([userId], map: "Upload.userId_index")
@@ -698,12 +701,29 @@ model Sub {
   AggPayOut               AggPayOut[]
   itemSubs                ItemSub[]
   domain                  Domain?
+  theme                   SubTheme?
 
   @@index([parentName])
   @@index([createdAt])
   @@index([userId])
   @@index([statusUpdatedAt])
   @@index([path], type: Gist)
+}
+
+model SubTheme {
+  subName        String     @id @db.Citext
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @default(now()) @updatedAt @map("updated_at")
+  primaryColor   String?
+  secondaryColor String?
+  linkColor      String?
+  logoId         Int?
+  defaultMode    ThemeMode?
+
+  sub            Sub        @relation(fields: [subName], references: [name], onDelete: Cascade, onUpdate: Cascade)
+  logo           Upload?    @relation("SubThemeLogo", fields: [logoId], references: [id], onDelete: SetNull)
+
+  @@index([logoId])
 }
 
 model MuteSub {
@@ -925,6 +945,7 @@ model Domain {
   records                 DomainVerificationRecord[]
   authRequests            DomainAuthRequest[]
   certificate             DomainCertificate?
+  seo                     DomainSeo?
 
   @@index([createdAt])
 }
@@ -992,6 +1013,29 @@ model DomainCertificate {
   domain          Domain                    @relation(fields: [domainId], references: [id], onDelete: Cascade)
 
   @@unique([domainId])
+}
+
+model DomainSeo {
+  domainId   Int      @id
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+  title      String?
+  tagline    String?
+  ogImageId  Int?
+  faviconId  Int?
+
+  domain     Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  ogImage    Upload?  @relation("DomainSeoOgImage", fields: [ogImageId], references: [id], onDelete: SetNull)
+  favicon    Upload?  @relation("DomainSeoFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
+
+  @@index([ogImageId])
+  @@index([faviconId])
+}
+
+enum ThemeMode {
+  LIGHT
+  DARK
+  SYSTEM
 }
 
 enum DomainStatus {
