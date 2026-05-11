@@ -64,6 +64,13 @@ export const DOMAIN_FULL_FIELDS = gql`
   }
 `
 
+export const DOMAIN_SEO_FIELDS = gql`
+  fragment DomainSeoFields on DomainSeo {
+    title
+    tagline
+    faviconId
+  }`
+
 export const GET_DOMAIN = gql`
   ${DOMAIN_FULL_FIELDS}
   query Domain($subName: String!) {
@@ -73,10 +80,30 @@ export const GET_DOMAIN = gql`
   }
 `
 
+export const GET_DOMAIN_SEO = gql`
+  ${DOMAIN_SEO_FIELDS}
+  query DomainSeo($subName: String!) {
+    domain(subName: $subName) {
+      seo {
+        ...DomainSeoFields
+      }
+    }
+  }
+`
+
 export const SET_DOMAIN = gql`
   mutation SetDomain($subName: String!, $domainName: String) {
     setDomain(subName: $subName, domainName: $domainName) {
       domainName
+    }
+  }
+`
+
+export const UPSERT_DOMAIN_SEO = gql`
+  ${DOMAIN_SEO_FIELDS}
+  mutation UpsertDomainSeo($subName: String!, $seo: DomainSeoInput!) {
+    upsertDomainSeo(subName: $subName, seo: $seo) {
+      ...DomainSeoFields
     }
   }
 `

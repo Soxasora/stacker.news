@@ -36,6 +36,7 @@ export default gql`
       billingType: String!, billingAutoRenew: Boolean!,
       sendProtocolId: Int,
       nsfw: Boolean!): PayIn!
+    upsertSubTheme(subName: String!, theme: SubThemeInput!): SubTheme!
   }
 
   type Sub {

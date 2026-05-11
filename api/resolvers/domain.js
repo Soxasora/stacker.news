@@ -1,4 +1,4 @@
-import { validateSchema, customDomainSchema } from '@/lib/validate'
+import { validateSchema, customDomainSchema, domainSeoSchema } from '@/lib/validate'
 import { GqlAuthenticationError, GqlInputError, GqlAuthorizationError } from '@/lib/error'
 import {
   DOMAIN_VERIFICATION_HOLD_AFTER_DAYS,
@@ -153,6 +153,38 @@ export default {
           throw new GqlInputError('failed to delete domain')
         }
       }
+    },
+    upsertDomainSeo: async (parent, { subName, seo }, { me, models }) => {
+      console.log('upsertDomainSeo', subName, seo)
+      if (!me) {
+        throw new GqlAuthenticationError()
+      }
+
+      // beta access
+      if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
+        throw new GqlAuthorizationError('not allowed')
+      }
+
+      const sub = await models.sub.findUnique({ where: { name: subName } })
+      if (!sub) {
+        throw new GqlInputError('sub not found')
+      }
+      if (sub.userId !== Number(me.id)) {
+        throw new GqlAuthorizationError('you do not own this sub')
+      }
+
+      const domain = await models.domain.findUnique({ where: { subName } })
+      if (!domain) {
+        throw new GqlInputError('SEO settings require a custom domain')
+      }
+
+      await validateSchema(domainSeoSchema, seo)
+
+      return await models.domainSeo.upsert({
+        where: { domainId: domain.id },
+        update: seo,
+        create: { domainId: domain.id, ...seo }
+      })
     }
   },
   Domain: {

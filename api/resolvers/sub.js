@@ -1,12 +1,13 @@
 import { timeUnitForRange, whenRange } from '@/lib/time'
-import { validateSchema, territorySchema } from '@/lib/validate'
+import { validateSchema, territorySchema, subThemeSchema } from '@/lib/validate'
 import { decodeCursor, LIMIT, nextCursorEncoded } from '@/lib/cursor'
 import { notifyTerritoryTransfer } from '@/lib/webPush'
 import pay from '../payIn'
-import { GqlAuthenticationError, GqlInputError } from '@/lib/error'
+import { GqlAuthenticationError, GqlInputError, GqlAuthorizationError } from '@/lib/error'
 import { uploadIdsFromText } from './upload'
 import { Prisma } from '@prisma/client'
 import { lexicalHTMLGenerator } from '@/lib/lexical/server/html'
+import { DOMAIN_BETA_IDS } from '@/lib/constants'
 
 export async function getSub (parent, { name }, { models, me }) {
   if (!name) return null
@@ -345,6 +346,37 @@ export default {
       data.uploadIds = uploadIdsFromText(data.desc)
 
       return await pay('TERRITORY_UNARCHIVE', data, { me, models, lnd, sendProtocolId })
+    },
+    upsertSubTheme: async (parent, { subName, theme }, { me, models }) => {
+      if (!me) {
+        throw new GqlAuthenticationError()
+      }
+
+      // beta access
+      if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
+        throw new GqlAuthorizationError('not allowed')
+      }
+
+      const sub = await models.sub.findUnique({ where: { name: subName } })
+      if (!sub) {
+        throw new GqlInputError('sub not found')
+      }
+      if (sub.userId !== Number(me.id)) {
+        throw new GqlAuthorizationError('you do not own this sub')
+      }
+
+      const domain = await models.domain.findUnique({ where: { subName } })
+      if (!domain) {
+        throw new GqlInputError('territory theme settings require a custom domain')
+      }
+
+      await validateSchema(subThemeSchema, theme)
+
+      return await models.subTheme.upsert({
+        where: { subName },
+        update: theme,
+        create: { subName, ...theme }
+      })
     }
   },
   Sub: {

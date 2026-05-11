@@ -7,6 +7,7 @@ export default gql`
 
   extend type Mutation {
     setDomain(subName: String!, domainName: String): Domain
+    upsertDomainSeo(subName: String!, seo: DomainSeoInput!): DomainSeo
   }
 
   type Domain {
