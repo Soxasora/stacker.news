@@ -717,7 +717,6 @@ model SubTheme {
   secondaryColor String?
   linkColor      String?
   logoId         Int?
-  defaultMode    ThemeMode?
 
   sub            Sub        @relation(fields: [subName], references: [name], onDelete: Cascade, onUpdate: Cascade)
   logo           Upload?    @relation("SubThemeLogo", fields: [logoId], references: [id], onDelete: SetNull)
@@ -1026,12 +1025,6 @@ model DomainSeo {
   favicon    Upload?  @relation("DomainSeoFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
 
   @@index([faviconId])
-}
-
-enum ThemeMode {
-  LIGHT
-  DARK
-  SYSTEM
 }
 
 enum DomainStatus {

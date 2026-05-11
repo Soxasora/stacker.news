@@ -43,12 +43,11 @@ class MyDocument extends Document {
 
     // custom domain SEO and territory theme
     const themeCss = buildSubThemeCss(theme)
-    const defaultMode = theme?.defaultMode || 'SYSTEM'
     const logoUrl = theme?.logoId ? `${PUBLIC_MEDIA_URL}/${theme.logoId}` : null
     const faviconUrl = seo?.faviconId ? `${PUBLIC_MEDIA_URL}/${seo.faviconId}` : null
 
     return (
-      <Html lang='en' data-scroll-behavior='smooth' data-sn-default-mode={defaultMode}>
+      <Html lang='en' data-scroll-behavior='smooth'>
         <Head nonce={nonce}>
           <link rel='manifest' href='/api/site.webmanifest' />
           <link rel='preload' href={`${process.env.NEXT_PUBLIC_ASSET_PREFIX}/Lightningvolt-xoqm.woff2`} as='font' type='font/woff2' crossOrigin='' />
@@ -86,7 +85,7 @@ class MyDocument extends Document {
           <meta name='mobile-web-app-capable' content='yes' />
           <meta name='theme-color' content='#121214' />
           <link rel='apple-touch-icon' href='/icons/icon_x192.png' />
-          <Script id='dark-mode-js' strategy='beforeInteractive' nonce={nonce}>
+          <Script id='dark-mode-js' strategy='beforeInteractive'>
             {`const handleThemeChange = (dark) => {
                 const root = window.document.documentElement
                 root.setAttribute('data-bs-theme', dark ? 'dark' : 'light')
@@ -109,15 +108,7 @@ class MyDocument extends Document {
 
                 if (localStorageExists) {
                   return { user: true, dark: localStorageTheme }
-                }
-
-                // a custom domain territory owner can pin a default mode for the territory
-                // user toggling still takes precedence
-                const subThemeDefaultMode = window.document.documentElement.dataset.snDefaultMode
-                if (subThemeDefaultMode === 'DARK') return { user: false, dark: true }
-                if (subThemeDefaultMode === 'LIGHT') return { user: false, dark: false }
-
-                if (supportsColorSchemeQuery) {
+                } else if (supportsColorSchemeQuery) {
                   return { user: false, dark: mql.matches }
                 }
               }

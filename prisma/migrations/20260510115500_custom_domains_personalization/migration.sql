@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "ThemeMode" AS ENUM ('LIGHT', 'DARK', 'SYSTEM');
-
 -- CreateTable
 CREATE TABLE "SubTheme" (
     "subName" CITEXT NOT NULL,
@@ -10,7 +7,6 @@ CREATE TABLE "SubTheme" (
     "secondaryColor" TEXT,
     "linkColor" TEXT,
     "logoId" INTEGER,
-    "defaultMode" "ThemeMode",
 
     CONSTRAINT "SubTheme_pkey" PRIMARY KEY ("subName")
 );

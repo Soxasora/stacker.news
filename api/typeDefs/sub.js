@@ -78,18 +78,11 @@ export default gql`
     revenue(when: String, from: String, to: String): Int
   }
 
-  enum ThemeMode {
-    LIGHT
-    DARK
-    SYSTEM
-  }
-
   type SubTheme {
     subName: String!
     primaryColor: String
     secondaryColor: String
     linkColor: String
-    defaultMode: ThemeMode
     logoId: Int
   }
 
@@ -98,6 +91,5 @@ export default gql`
     secondaryColor: String
     linkColor: String
     logoId: Int
-    defaultMode: ThemeMode
   }
 `
