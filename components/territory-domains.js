@@ -8,7 +8,7 @@ import { GET_DOMAIN, SET_DOMAIN } from '@/fragments/domains'
 import { useEffect, useState, createContext, useContext, useMemo } from 'react'
 import Moon from '@/svgs/moon-fill.svg'
 import ClipboardLine from '@/svgs/clipboard-line.svg'
-import styles from './item.module.css'
+import styles from './territory-domains.module.css'
 import { getSeoWithFallback } from '@/lib/domains/seo'
 
 const DOMAIN_POLL_INTERVAL_MS = 10_000
@@ -85,7 +85,7 @@ const DomainLabel = ({ domain, polling }) => {
             : status === 'HOLD'
               ? <Badge bg='secondary'>HOLD</Badge>
               : <Badge bg='success'>active</Badge>}
-          {polling && <Moon className='spin fill-grey' style={{ width: '1rem', height: '1rem' }} />}
+          {polling && <Moon className={`spin fill-grey ${styles.statusIcon}`} />}
         </div>
       )}
     </div>
@@ -98,32 +98,22 @@ const DomainGuidelines = ({ domain }) => {
   const dnsRecord = ({ record }) => {
     return (
       <div className='d-flex align-items-center gap-2 flex-wrap'>
-        <span className={`${styles.record}`}>
+        <span className={styles.record}>
           <small className='fw-bold text-muted d-flex align-items-center gap-1 position-relative'>
             host
             <CopyButton
               value={record?.recordName}
-              append={
-                <ClipboardLine
-                  className={`${styles.clipboard}`}
-                  style={{ width: '1rem', height: '1rem' }}
-                />
-              }
+              append={<ClipboardLine className={styles.clipboard} />}
             />
           </small>
           <pre>{record?.recordName}</pre>
         </span>
-        <span className={`${styles.record}`}>
+        <span className={styles.record}>
           <small className='fw-bold text-muted d-flex align-items-center gap-1 position-relative'>
             value
             <CopyButton
               value={record?.recordValue}
-              append={
-                <ClipboardLine
-                  className={`${styles.clipboard}`}
-                  style={{ width: '1rem', height: '1rem' }}
-                />
-              }
+              append={<ClipboardLine className={styles.clipboard} />}
             />
           </small>
           <pre>{record?.recordValue}</pre>
