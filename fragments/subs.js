@@ -34,6 +34,7 @@ export const SUB_FIELDS = gql`
     meSubscription
     nsfw
     domain {
+      id
       domainName
       status
     }
@@ -172,6 +173,7 @@ export const GET_SUB_THEME = gql`
   ${SUB_THEME_FIELDS}
   query SubTheme($subName: String!) {
     sub(name: $subName) {
+      name
       theme {
         ...SubThemeFields
       }
@@ -183,7 +185,10 @@ export const UPSERT_SUB_THEME = gql`
   ${SUB_THEME_FIELDS}
   mutation UpsertSubTheme($subName: String!, $theme: SubThemeInput!) {
     upsertSubTheme(subName: $subName, theme: $theme) {
-      ...SubThemeFields
+      name
+      theme {
+        ...SubThemeFields
+      }
     }
   }
 `

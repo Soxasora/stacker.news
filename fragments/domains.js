@@ -2,6 +2,7 @@ import { gql } from 'graphql-tag'
 
 export const DOMAIN_FIELDS = gql`
   fragment DomainFields on Domain {
+    id
     domainName
     status
     subName
@@ -84,6 +85,7 @@ export const GET_DOMAIN_SEO = gql`
   ${DOMAIN_SEO_FIELDS}
   query DomainSeo($subName: String!) {
     domain(subName: $subName) {
+      id
       seo {
         ...DomainSeoFields
       }
@@ -94,6 +96,7 @@ export const GET_DOMAIN_SEO = gql`
 export const SET_DOMAIN = gql`
   mutation SetDomain($subName: String!, $domainName: String) {
     setDomain(subName: $subName, domainName: $domainName) {
+      id
       domainName
     }
   }
@@ -103,7 +106,10 @@ export const UPSERT_DOMAIN_SEO = gql`
   ${DOMAIN_SEO_FIELDS}
   mutation UpsertDomainSeo($subName: String!, $seo: DomainSeoInput!) {
     upsertDomainSeo(subName: $subName, seo: $seo) {
-      ...DomainSeoFields
+      id
+      seo {
+        ...DomainSeoFields
+      }
     }
   }
 `

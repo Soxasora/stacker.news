@@ -155,7 +155,6 @@ export default {
       }
     },
     upsertDomainSeo: async (parent, { subName, seo }, { me, models }) => {
-      console.log('upsertDomainSeo', subName, seo)
       if (!me) {
         throw new GqlAuthenticationError()
       }
@@ -180,11 +179,13 @@ export default {
 
       await validateSchema(domainSeoSchema, seo)
 
-      return await models.domainSeo.upsert({
+      const updatedSeo = await models.domainSeo.upsert({
         where: { domainId: domain.id },
         update: seo,
         create: { domainId: domain.id, ...seo }
       })
+
+      return { ...domain, seo: updatedSeo }
     }
   },
   Domain: {

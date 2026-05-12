@@ -372,11 +372,13 @@ export default {
 
       await validateSchema(subThemeSchema, theme)
 
-      return await models.subTheme.upsert({
+      const updatedTheme = await models.subTheme.upsert({
         where: { subName },
         update: theme,
         create: { subName, ...theme }
       })
+
+      return { ...sub, theme: updatedTheme }
     }
   },
   Sub: {
@@ -429,7 +431,7 @@ export default {
       // domain essentials
       return await models.domain.findUnique({
         where: { subName: sub.name },
-        select: { domainName: true, status: true }
+        select: { id: true, domainName: true, status: true }
       })
     },
     theme: async (sub, args, { models }) => {

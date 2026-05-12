@@ -7,7 +7,6 @@ import { useToast } from './toast'
 import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 import { FileUpload } from './file-upload'
 import { Button } from 'react-bootstrap'
-import SnIcon from '@/svgs/sn.svg'
 import styles from './territory-customization.module.css'
 import { GET_DOMAIN_SEO, UPSERT_DOMAIN_SEO } from '@/fragments/domains'
 import { useMutation, useQuery } from '@apollo/client/react'
@@ -87,7 +86,7 @@ const normalizeColorOverride = (value, fallback) =>
 
 export function TerritoryThemeForm ({ sub }) {
   const [upsertSubTheme] = useMutation(UPSERT_SUB_THEME)
-  const { data, refetch } = useQuery(GET_SUB_THEME, {
+  const { data } = useQuery(GET_SUB_THEME, {
     variables: { subName: sub.name },
     nextFetchPolicy: 'cache-and-network'
   })
@@ -114,7 +113,6 @@ export function TerritoryThemeForm ({ sub }) {
 
     try {
       await upsertSubTheme({ variables: { subName: sub.name, theme: input } })
-      refetch()
       toaster.success('theme saved, may take a few minutes to take effect')
     } catch (error) {
       toaster.danger(error.message)
@@ -135,7 +133,6 @@ export function TerritoryThemeForm ({ sub }) {
         hint='shown in the nav (in place of the SN icon)'
         width={64}
         height={64}
-        defaultAsset={<SnIcon />}
         uploading={uploading}
         onUpload={() => setUploading(true)}
         onSuccess={() => setUploading(false)}
@@ -173,7 +170,7 @@ export function TerritoryThemeForm ({ sub }) {
 
 export function TerritoryDomainSeoForm ({ sub }) {
   const [upsertDomainSeo] = useMutation(UPSERT_DOMAIN_SEO)
-  const { data, refetch } = useQuery(GET_DOMAIN_SEO, {
+  const { data } = useQuery(GET_DOMAIN_SEO, {
     variables: { subName: sub.name },
     nextFetchPolicy: 'cache-and-network'
   })
@@ -198,7 +195,6 @@ export function TerritoryDomainSeoForm ({ sub }) {
 
     try {
       await upsertDomainSeo({ variables: { subName: sub.name, seo: input } })
-      refetch()
       toaster.success('SEO saved, may take a few minutes to take effect')
     } catch (error) {
       toaster.danger(error.message)
