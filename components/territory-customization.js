@@ -65,7 +65,7 @@ function AssetField ({ label, name, hint, defaultAsset, brand, width = 48, heigh
               }}
             >
               <Button size='sm' variant='secondary' disabled={uploading}>
-                {uploading ? 'uploading…' : (field.value ? 'replace' : 'upload')}
+                {uploading ? 'uploading...' : (field.value ? 'replace' : 'upload')}
               </Button>
             </FileUpload>
             {field.value && (
