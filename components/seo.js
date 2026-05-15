@@ -105,7 +105,7 @@ export default function Seo ({ sub, item, user }) {
         description: desc,
         images: [
           {
-            url: 'https://capture.stacker.news' + router.asPath
+            url: 'https://capture.stacker.news' + pathNoQuery
           }
         ],
         site_name: siteName
