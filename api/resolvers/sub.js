@@ -101,6 +101,24 @@ export async function topSubs (parent, { query, cursor, when, from, to, limit, b
   }
 }
 
+/** check that the upload is owned by the user and is an image */
+async function validateOwnedImageUpload (models, { id, userId, field }) {
+  if (!id) return
+
+  const upload = await models.upload.findFirst({
+    where: {
+      id,
+      userId,
+      type: { startsWith: 'image/' }
+    },
+    select: { id: true }
+  })
+
+  if (!upload) {
+    throw new GqlInputError(`${field} must be an image upload you own`)
+  }
+}
+
 export default {
   Query: {
     sub: getSub,
@@ -409,6 +427,7 @@ export default {
       }
 
       await validateSchema(subThemeSchema, theme)
+      await validateOwnedImageUpload(models, { id: theme.logoId, userId: Number(me.id), field: 'logoId' })
 
       const updatedTheme = await models.subTheme.upsert({
         where: { subName },
@@ -442,6 +461,7 @@ export default {
       }
 
       await validateSchema(subSeoSchema, seo)
+      await validateOwnedImageUpload(models, { id: seo.faviconId, userId: Number(me.id), field: 'faviconId' })
 
       return await models.subSeo.upsert({
         where: { subName },
