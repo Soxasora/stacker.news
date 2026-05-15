@@ -392,9 +392,10 @@ export function Sorts ({ prefix, className }) {
 }
 
 export function PostItem ({ className, prefix }) {
+  const { domain } = useDomain()
   const isLurker = useIsLurker()
   return (
-    <Link href={prefix + '/post'} className={`${className} btn btn-md btn-${isLurker ? 'grey' : 'primary'} text-black py-md-1`}>
+    <Link href={prefix + '/post'} className={`${className} btn btn-md btn-${isLurker ? 'grey' : 'primary'} ${!domain ? 'text-black' : ''} py-md-1`}>
       post
     </Link>
   )
