@@ -33,11 +33,6 @@ export const SUB_FIELDS = gql`
     meMuteSub
     meSubscription
     nsfw
-    domain {
-      id
-      domainName
-      status
-    }
   }`
 
 export const SUB_FULL_FIELDS = gql`
@@ -56,10 +51,19 @@ export const SUB_FULL_FIELDS = gql`
 
 export const SUB_THEME_FIELDS = gql`
   fragment SubThemeFields on SubTheme {
+    subName
     primaryColor
     secondaryColor
     linkColor
     logoId
+  }`
+
+export const SUB_SEO_FIELDS = gql`
+  fragment SubSeoFields on SubSeo {
+    subName
+    title
+    tagline
+    faviconId
   }`
 
 export const SUB = gql`
@@ -172,11 +176,8 @@ export const TOP_SUBS = gql`
 export const GET_SUB_THEME = gql`
   ${SUB_THEME_FIELDS}
   query SubTheme($subName: String!) {
-    sub(name: $subName) {
-      name
-      theme {
-        ...SubThemeFields
-      }
+    subTheme(subName: $subName) {
+      ...SubThemeFields
     }
   }
 `
@@ -185,10 +186,16 @@ export const UPSERT_SUB_THEME = gql`
   ${SUB_THEME_FIELDS}
   mutation UpsertSubTheme($subName: String!, $theme: SubThemeInput!) {
     upsertSubTheme(subName: $subName, theme: $theme) {
-      name
-      theme {
-        ...SubThemeFields
-      }
+      ...SubThemeFields
+    }
+  }
+`
+
+export const UPSERT_SUB_SEO = gql`
+  ${SUB_SEO_FIELDS}
+  mutation UpsertSubSeo($subName: String!, $seo: SubSeoInput!) {
+    upsertSubSeo(subName: $subName, seo: $seo) {
+      ...SubSeoFields
     }
   }
 `

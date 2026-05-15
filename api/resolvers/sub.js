@@ -1,5 +1,5 @@
 import { timeUnitForRange, whenRange } from '@/lib/time'
-import { validateSchema, territorySchema, subThemeSchema } from '@/lib/validate'
+import { validateSchema, territorySchema, subThemeSchema, subSeoSchema } from '@/lib/validate'
 import { decodeCursor, LIMIT, nextCursorEncoded } from '@/lib/cursor'
 import { notifyTerritoryTransfer } from '@/lib/webPush'
 import pay from '../payIn'
@@ -166,6 +166,44 @@ export default {
       })
 
       return latest?.createdAt
+    },
+    subTheme: async (parent, { subName }, { models, me }) => {
+      if (!me) {
+        throw new GqlAuthenticationError()
+      }
+
+      if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
+        throw new GqlAuthorizationError('not allowed')
+      }
+
+      const sub = await models.sub.findUnique({ where: { name: subName } })
+      if (!sub) {
+        throw new GqlInputError('sub not found')
+      }
+      if (sub.userId !== Number(me.id)) {
+        throw new GqlAuthorizationError('you do not own this sub')
+      }
+
+      return await models.subTheme.findUnique({ where: { subName } })
+    },
+    subSeo: async (parent, { subName }, { models, me }) => {
+      if (!me) {
+        throw new GqlAuthenticationError()
+      }
+
+      if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
+        throw new GqlAuthorizationError('not allowed')
+      }
+
+      const sub = await models.sub.findUnique({ where: { name: subName } })
+      if (!sub) {
+        throw new GqlInputError('sub not found')
+      }
+      if (sub.userId !== Number(me.id)) {
+        throw new GqlAuthorizationError('you do not own this sub')
+      }
+
+      return await models.subSeo.findUnique({ where: { subName } })
     },
     topSubs: async (parent, { cursor, when, by = 'stacked', from, to, limit }, { models, me }) => {
       const query = Prisma.sql`
@@ -378,7 +416,38 @@ export default {
         create: { subName, ...theme }
       })
 
-      return { ...sub, theme: updatedTheme }
+      return updatedTheme
+    },
+    upsertSubSeo: async (parent, { subName, seo }, { me, models }) => {
+      if (!me) {
+        throw new GqlAuthenticationError()
+      }
+
+      // beta access
+      if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
+        throw new GqlAuthorizationError('not allowed')
+      }
+
+      const sub = await models.sub.findUnique({ where: { name: subName } })
+      if (!sub) {
+        throw new GqlInputError('sub not found')
+      }
+      if (sub.userId !== Number(me.id)) {
+        throw new GqlAuthorizationError('you do not own this sub')
+      }
+
+      const domain = await models.domain.findUnique({ where: { subName } })
+      if (!domain) {
+        throw new GqlInputError('SEO settings require a custom domain')
+      }
+
+      await validateSchema(subSeoSchema, seo)
+
+      return await models.subSeo.upsert({
+        where: { subName },
+        update: seo,
+        create: { subName, ...seo }
+      })
     }
   },
   Sub: {
@@ -422,23 +491,6 @@ export default {
         console.error('error generating HTML from Lexical State:', error)
         return null
       }
-    },
-    domain: async (sub, args, { models }) => {
-      if (sub.domain !== undefined) {
-        return sub.domain
-      }
-
-      // domain essentials
-      return await models.domain.findUnique({
-        where: { subName: sub.name },
-        select: { id: true, domainName: true, status: true }
-      })
-    },
-    theme: async (sub, args, { models }) => {
-      if (sub.theme !== undefined) {
-        return sub.theme
-      }
-      return await models.subTheme.findUnique({ where: { subName: sub.name } })
     }
   }
 }

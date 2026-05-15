@@ -7,7 +7,6 @@ export default gql`
 
   extend type Mutation {
     setDomain(subName: String!, domainName: String): Domain
-    upsertDomainSeo(subName: String!, seo: DomainSeoInput!): Domain
   }
 
   type Domain {
@@ -20,7 +19,6 @@ export default gql`
     records: DomainVerificationRecordMap
     attempts: [DomainVerificationAttempt]
     certificate: DomainCertificate
-    seo: DomainSeo
   }
 
   type DomainVerificationRecord {
@@ -59,19 +57,6 @@ export default gql`
     domainId: Int!
     certificateArn: String!
     status: DomainCertificateStatus
-  }
-
-  type DomainSeo {
-    domainId: Int!
-    title: String
-    tagline: String
-    faviconId: Int
-  }
-
-  input DomainSeoInput {
-    title: String
-    tagline: String
-    faviconId: Int
   }
 
   enum DomainVerificationStage {

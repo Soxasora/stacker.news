@@ -1,4 +1,4 @@
-import { validateSchema, customDomainSchema, domainSeoSchema } from '@/lib/validate'
+import { validateSchema, customDomainSchema } from '@/lib/validate'
 import { GqlAuthenticationError, GqlInputError, GqlAuthorizationError } from '@/lib/error'
 import {
   DOMAIN_VERIFICATION_HOLD_AFTER_DAYS,
@@ -153,39 +153,6 @@ export default {
           throw new GqlInputError('failed to delete domain')
         }
       }
-    },
-    upsertDomainSeo: async (parent, { subName, seo }, { me, models }) => {
-      if (!me) {
-        throw new GqlAuthenticationError()
-      }
-
-      // beta access
-      if (!DOMAIN_BETA_IDS.includes(Number(me.id))) {
-        throw new GqlAuthorizationError('not allowed')
-      }
-
-      const sub = await models.sub.findUnique({ where: { name: subName } })
-      if (!sub) {
-        throw new GqlInputError('sub not found')
-      }
-      if (sub.userId !== Number(me.id)) {
-        throw new GqlAuthorizationError('you do not own this sub')
-      }
-
-      const domain = await models.domain.findUnique({ where: { subName } })
-      if (!domain) {
-        throw new GqlInputError('SEO settings require a custom domain')
-      }
-
-      await validateSchema(domainSeoSchema, seo)
-
-      const updatedSeo = await models.domainSeo.upsert({
-        where: { domainId: domain.id },
-        update: seo,
-        create: { domainId: domain.id, ...seo }
-      })
-
-      return { ...domain, seo: updatedSeo }
     }
   },
   Domain: {
@@ -194,10 +161,6 @@ export default {
 
       // O(1) lookups by type, simpler checks for CNAME and ACM validation records
       return Object.fromEntries(domain.records.map(record => [record.type, record]))
-    },
-    seo: async (domain, args, { models }) => {
-      if (domain.seo !== undefined) return domain.seo
-      return models.domainSeo.findUnique({ where: { domainId: domain.id } })
     }
   }
 }

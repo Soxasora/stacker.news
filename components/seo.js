@@ -7,28 +7,28 @@ import { useDomain } from './territory-domains'
 // SEO for Stacker News or a custom domain
 // path is the URL path used for the dynamic capture fallback image
 function useCustomSeo (path) {
-  const { seo: domainSeo } = useDomain()
+  const { seo: customSeo } = useDomain()
 
-  const brand = domainSeo?.title ?? 'stacker news'
-  const siteName = domainSeo?.title ?? 'Stacker News'
-  const tagline = domainSeo?.tagline ?? 'moderating forums with money'
+  const brand = customSeo?.title ?? 'stacker news'
+  const siteName = customSeo?.title ?? 'Stacker News'
+  const tagline = customSeo?.tagline ?? 'moderating forums with money'
 
-  // domain seo doesn't support twitter yet
-  const twitter = domainSeo
+  // custom domain SEO doesn't support twitter handles yet
+  const twitter = customSeo
     ? { cardType: 'summary_large_image' }
     : { site: '@stacker_news', cardType: 'summary_large_image' }
 
-  return { domainSeo, brand, siteName, tagline, twitter }
+  return { customSeo, brand, siteName, tagline, twitter }
 }
 
 export function SeoSearch ({ sub }) {
   const router = useRouter()
-  const { domainSeo, brand, siteName, twitter } = useCustomSeo(router.asPath)
+  const { customSeo, brand, siteName, twitter } = useCustomSeo(router.asPath)
 
-  const subStr = !domainSeo && sub ? ` ~${sub}` : ''
+  const subStr = !customSeo && sub ? ` ~${sub}` : ''
   const query = router.query.q || ''
   const title = `${query || 'search'} \\ ${brand}${subStr}`
-  const desc = domainSeo
+  const desc = customSeo
     ? `${brand} search: ${query}`
     : `SN${subStr} search: ${query}`
 
@@ -59,10 +59,10 @@ export function SeoSearch ({ sub }) {
 export default function Seo ({ sub, item, user }) {
   const router = useRouter()
   const pathNoQuery = router.asPath.split('?')[0]
-  const { domainSeo, brand, siteName, tagline, twitter } = useCustomSeo(pathNoQuery)
+  const { customSeo, brand, siteName, tagline, twitter } = useCustomSeo(pathNoQuery)
 
   const defaultTitle = pathNoQuery.slice(1)
-  const snStr = `${brand}${!domainSeo && sub ? ` ~${sub}` : ''}`
+  const snStr = `${brand}${!customSeo && sub ? ` ~${sub}` : ''}`
 
   let fullTitle = `${defaultTitle && `${defaultTitle} \\ `}${brand}`
   let desc = tagline

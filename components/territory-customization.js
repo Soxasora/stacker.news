@@ -1,5 +1,5 @@
 import { Form, Input, SubmitButton } from './form'
-import { domainSeoSchema, subThemeSchema } from '@/lib/validate'
+import { subSeoSchema, subThemeSchema } from '@/lib/validate'
 import { truncateDesc } from '@/lib/domains/seo'
 import { useField } from 'formik'
 import { useState } from 'react'
@@ -8,9 +8,8 @@ import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 import { FileUpload } from './file-upload'
 import { Button } from 'react-bootstrap'
 import styles from './territory-customization.module.css'
-import { GET_DOMAIN_SEO, UPSERT_DOMAIN_SEO } from '@/fragments/domains'
 import { useMutation, useQuery } from '@apollo/client/react'
-import { GET_SUB_THEME, UPSERT_SUB_THEME } from '@/fragments/subs'
+import { GET_SUB_THEME, UPSERT_SUB_SEO, UPSERT_SUB_THEME } from '@/fragments/subs'
 
 // uploads via the presigned-POST flow; the form holds the upload id and the
 // preview url is either the freshly uploaded one or derived from that id.
@@ -84,7 +83,7 @@ const SN_DEFAULTS = {
 const normalizeColorOverride = (value, fallback) =>
   value && value !== fallback ? value : null
 
-export function TerritoryThemeForm ({ sub }) {
+export function TerritoryThemeForm ({ sub, hasDomain, domainLoading, refetchSettings }) {
   const [upsertSubTheme] = useMutation(UPSERT_SUB_THEME)
   const { data } = useQuery(GET_SUB_THEME, {
     variables: { subName: sub.name },
@@ -93,8 +92,7 @@ export function TerritoryThemeForm ({ sub }) {
   const [uploading, setUploading] = useState(false)
 
   const toaster = useToast()
-  const theme = data?.sub?.theme
-  const hasDomain = !!sub?.domain?.domainName
+  const theme = data?.subTheme
 
   const initial = {
     primaryColor: theme?.primaryColor ?? SN_DEFAULTS.primaryColor,
@@ -113,6 +111,7 @@ export function TerritoryThemeForm ({ sub }) {
 
     try {
       await upsertSubTheme({ variables: { subName: sub.name, theme: input } })
+      await refetchSettings?.()
       toaster.success('theme saved, may take a few minutes to take effect')
     } catch (error) {
       toaster.danger(error.message)
@@ -162,23 +161,17 @@ export function TerritoryThemeForm ({ sub }) {
         />
       </div>
       <div className='mt-3 d-flex justify-content-end'>
-        <SubmitButton variant='primary' disabled={!hasDomain || uploading}>save theme</SubmitButton>
+        <SubmitButton variant='primary' disabled={domainLoading || !hasDomain || uploading}>save theme</SubmitButton>
       </div>
     </Form>
   )
 }
 
-export function TerritoryDomainSeoForm ({ sub }) {
-  const [upsertDomainSeo] = useMutation(UPSERT_DOMAIN_SEO)
-  const { data } = useQuery(GET_DOMAIN_SEO, {
-    variables: { subName: sub.name },
-    nextFetchPolicy: 'cache-and-network'
-  })
+export function TerritorySeoForm ({ sub, seo, hasDomain, domainLoading, refetchSettings }) {
+  const [upsertSubSeo] = useMutation(UPSERT_SUB_SEO)
   const [uploading, setUploading] = useState(false)
 
   const toaster = useToast()
-  const seo = data?.domain?.seo
-  const hasDomain = !!sub?.domain?.domainName
 
   const initial = {
     title: seo?.title ?? '',
@@ -194,7 +187,8 @@ export function TerritoryDomainSeoForm ({ sub }) {
     }
 
     try {
-      await upsertDomainSeo({ variables: { subName: sub.name, seo: input } })
+      await upsertSubSeo({ variables: { subName: sub.name, seo: input } })
+      await refetchSettings?.()
       toaster.success('SEO saved, may take a few minutes to take effect')
     } catch (error) {
       toaster.danger(error.message)
@@ -204,7 +198,7 @@ export function TerritoryDomainSeoForm ({ sub }) {
   return (
     <Form
       initial={initial}
-      schema={domainSeoSchema}
+      schema={subSeoSchema}
       enableReinitialize
       className='mt-2'
       onSubmit={onSubmit}
@@ -236,7 +230,7 @@ export function TerritoryDomainSeoForm ({ sub }) {
         hint='the page description of your territory, defaults to the territory description if left blank'
       />
       <div className='mt-3 d-flex justify-content-end'>
-        <SubmitButton variant='primary' disabled={!hasDomain || uploading}>save SEO</SubmitButton>
+        <SubmitButton variant='primary' disabled={domainLoading || !hasDomain || uploading}>save SEO</SubmitButton>
       </div>
     </Form>
   )

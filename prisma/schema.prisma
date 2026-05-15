@@ -332,8 +332,8 @@ model Upload {
   User         User[]
   ItemUpload   ItemUpload[]
   uploadPayIns UploadPayIn[]
-  subThemeLogos SubTheme[] @relation("SubThemeLogo")
-  domainSeoFavicons DomainSeo[] @relation("DomainSeoFavicon")
+  subThemeLogos   SubTheme[] @relation("SubThemeLogo")
+  subSeoFavicons  SubSeo[]   @relation("SubSeoFavicon")
 
   @@index([createdAt], map: "Upload.created_at_index")
   @@index([userId], map: "Upload.userId_index")
@@ -701,6 +701,7 @@ model Sub {
   itemSubs                ItemSub[]
   domain                  Domain?
   theme                   SubTheme?
+  seo                     SubSeo?
 
   @@index([parentName])
   @@index([createdAt])
@@ -943,7 +944,6 @@ model Domain {
   records                 DomainVerificationRecord[]
   authRequests            DomainAuthRequest[]
   certificate             DomainCertificate?
-  seo                     DomainSeo?
 
   @@index([createdAt])
 }
@@ -1013,16 +1013,16 @@ model DomainCertificate {
   @@unique([domainId])
 }
 
-model DomainSeo {
-  domainId   Int      @id
+model SubSeo {
+  subName    String   @id @db.Citext
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
   title      String?
   tagline    String?
   faviconId  Int?
 
-  domain     Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
-  favicon    Upload?  @relation("DomainSeoFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
+  sub        Sub      @relation(fields: [subName], references: [name], onDelete: Cascade, onUpdate: Cascade)
+  favicon    Upload?  @relation("SubSeoFavicon", fields: [faviconId], references: [id], onDelete: SetNull)
 
   @@index([faviconId])
 }

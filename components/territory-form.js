@@ -4,10 +4,10 @@ import { Checkbox, CheckboxGroup, Form, Input, SNInput, Range } from './form'
 import { useFormikContext } from 'formik'
 import FeeButton, { FeeButtonProvider } from './fee-button'
 import { gql } from '@apollo/client'
-import { useApolloClient, useLazyQuery } from '@apollo/client/react'
-import { useCallback, useMemo, useState } from 'react'
+import { useApolloClient, useLazyQuery, useQuery } from '@apollo/client/react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
-import { MAX_TERRITORY_DESC_LENGTH, POST_TYPES, DOMAIN_BETA_IDS, TERRITORY_BILLING_OPTIONS, TERRITORY_PERIOD_COST } from '@/lib/constants'
+import { MAX_TERRITORY_DESC_LENGTH, POST_TYPES, DOMAIN_BETA_IDS, TERRITORY_BILLING_OPTIONS, TERRITORY_PERIOD_COST, SSR, DOMAIN_POLL_INTERVAL_MS } from '@/lib/constants'
 import { territorySchema } from '@/lib/validate'
 import { useMe } from './me'
 import Info from './info'
@@ -20,7 +20,8 @@ import usePayInMutation from '@/components/payIn/hooks/use-pay-in-mutation'
 import { UNARCHIVE_TERRITORY, UPSERT_SUB } from '@/fragments/payIn'
 import LinkExternal from '@/svgs/link-external.svg'
 import { isAbortError } from '@/lib/error'
-import { TerritoryDomainSeoForm, TerritoryThemeForm } from './territory-customization'
+import { TerritorySeoForm, TerritoryThemeForm } from './territory-customization'
+import { GET_DOMAIN_SETTINGS } from '@/fragments/domains'
 
 function SatFilterRanges () {
   const { values } = useFormikContext()
@@ -43,6 +44,55 @@ function SatFilterRanges () {
       max={1000}
       suffix=' sats'
     />
+  )
+}
+
+function TerritoryCustomizationSettings ({ sub }) {
+  const { data, loading, refetch, stopPolling, startPolling } = useQuery(GET_DOMAIN_SETTINGS, SSR
+    ? {}
+    : {
+        variables: { subName: sub.name },
+        nextFetchPolicy: 'cache-and-network'
+      })
+  const domain = data?.domain ?? null
+  const seo = data?.subSeo ?? null
+  const hasDomain = !!domain
+
+  useEffect(() => {
+    if (domain?.status === 'PENDING') {
+      startPolling?.(DOMAIN_POLL_INTERVAL_MS)
+    } else {
+      stopPolling?.()
+    }
+  }, [domain?.status, startPolling, stopPolling])
+
+  return (
+    <div className='w-100'>
+      <AccordianItem
+        show
+        header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>advanced</div>}
+        body={
+          <>
+            <TerritoryDomains
+              sub={sub}
+              domain={domain}
+              loading={loading}
+              onDomainChanged={refetch}
+            />
+            <AccordianItem
+              header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>appearance</div>}
+              body={<TerritoryThemeForm sub={sub} hasDomain={hasDomain} domainLoading={loading} refetchSettings={refetch} />}
+              show
+            />
+            <AccordianItem
+              header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>SEO settings</div>}
+              body={<TerritorySeoForm sub={sub} seo={seo} hasDomain={hasDomain} domainLoading={loading} refetchSettings={refetch} />}
+              show
+            />
+          </>
+        }
+      />
+    </div>
   )
 }
 
@@ -312,27 +362,7 @@ export default function TerritoryForm ({ sub }) {
       {DOMAIN_BETA_IDS.includes(Number(me?.id)) &&
         <>
           {sub && !domain &&
-            <div className='w-100'>
-              <AccordianItem
-                show
-                header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>advanced</div>}
-                body={
-                  <>
-                    <TerritoryDomains sub={sub} />
-                    <AccordianItem
-                      header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>appearance</div>}
-                      body={<TerritoryThemeForm sub={sub} />}
-                      show
-                    />
-                    <AccordianItem
-                      header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>SEO settings</div>}
-                      body={<TerritoryDomainSeoForm sub={sub} />}
-                      show
-                    />
-                  </>
-                }
-              />
-            </div>}
+            <TerritoryCustomizationSettings sub={sub} />}
           {sub && domain && <Link className='text-muted w-100' href={`${process.env.NEXT_PUBLIC_URL}/~${sub.name}/edit`}>domain settings on stacker.news <LinkExternal width={16} height={16} /></Link>}
         </>}
     </FeeButtonProvider>
