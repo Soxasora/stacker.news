@@ -42,7 +42,6 @@ function AssetField ({ label, name, hint, defaultAsset, brand, width = 48, heigh
                 <SnIcon
                   width={64}
                   height={64}
-                  className={styles.previewIcon}
                   style={{ fill: formik.values.primaryColor, filter: `drop-shadow(0 0 6px ${formik.values.primaryColor})` }}
                 />
                 )
