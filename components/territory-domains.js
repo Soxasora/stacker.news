@@ -27,7 +27,7 @@ export const DomainProvider = ({ domain: ssrDomain, children }) => {
 
   const seo = useMemo(
     () => domain
-      ? getSeoWithFallback({ domainSeo: domain.domainSeo, sub: domain.sub })
+      ? getSeoWithFallback(domain)
       : null,
     [domain])
 

@@ -232,7 +232,7 @@ export function TerritoryDomainSeoForm ({ sub }) {
         rows={3}
         label='site tagline'
         name='tagline'
-        placeholder={truncateDesc(sub, 120)}
+        placeholder={truncateDesc(sub?.desc, 120)}
         hint='the page description of your territory, defaults to the territory description if left blank'
       />
       <div className='mt-3 d-flex justify-content-end'>
