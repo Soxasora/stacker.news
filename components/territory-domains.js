@@ -149,7 +149,7 @@ const DomainGuidelines = ({ domain }) => {
   )
 }
 
-export default function CustomDomainForm ({ sub, domain, loading, onDomainChanged }) {
+export default function CustomDomainForm ({ sub, domain, onDomainChanged }) {
   const [setDomain] = useMutation(SET_DOMAIN)
 
   const toaster = useToast()
@@ -189,7 +189,7 @@ export default function CustomDomainForm ({ sub, domain, loading, onDomainChange
         <div className='d-flex align-items-center gap-2'>
           <div className='flex-grow-1'>
             <Input
-              disabled={loading || !!domain}
+              disabled={!!domain}
               label={<DomainLabel domain={domain} polling={polling} />}
               name='domainName'
               placeholder='www.example.com'
@@ -204,7 +204,7 @@ export default function CustomDomainForm ({ sub, domain, loading, onDomainChange
               reset
             </Button>
           )}
-          {!loading && !domain
+          {!domain
             ? (
               <SubmitButton variant='primary' className='mt-3'>verify</SubmitButton>
               )

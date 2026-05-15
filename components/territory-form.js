@@ -48,7 +48,7 @@ function SatFilterRanges () {
 }
 
 function TerritoryCustomizationSettings ({ sub }) {
-  const { data, loading, refetch, stopPolling, startPolling } = useQuery(GET_DOMAIN_SETTINGS, SSR
+  const { data, refetch, stopPolling, startPolling } = useQuery(GET_DOMAIN_SETTINGS, SSR
     ? {}
     : {
         variables: { subName: sub.name },
@@ -56,7 +56,7 @@ function TerritoryCustomizationSettings ({ sub }) {
       })
   const domain = data?.domain ?? null
   const seo = data?.subSeo ?? null
-  const hasDomain = !!domain
+  const hasActiveDomain = domain?.status === 'ACTIVE'
 
   useEffect(() => {
     if (domain?.status === 'PENDING') {
@@ -76,19 +76,22 @@ function TerritoryCustomizationSettings ({ sub }) {
             <TerritoryDomains
               sub={sub}
               domain={domain}
-              loading={loading}
               onDomainChanged={refetch}
             />
-            <AccordianItem
-              header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>appearance</div>}
-              body={<TerritoryThemeForm sub={sub} hasDomain={hasDomain} domainLoading={loading} refetchSettings={refetch} />}
-              show
-            />
-            <AccordianItem
-              header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>SEO settings</div>}
-              body={<TerritorySeoForm sub={sub} seo={seo} hasDomain={hasDomain} domainLoading={loading} refetchSettings={refetch} />}
-              show
-            />
+            {hasActiveDomain && (
+              <>
+                <AccordianItem
+                  header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>appearance</div>}
+                  body={<TerritoryThemeForm sub={sub} refetchSettings={refetch} />}
+                  show
+                />
+                <AccordianItem
+                  header={<div style={{ fontWeight: 'bold', fontSize: '92%' }}>SEO settings</div>}
+                  body={<TerritorySeoForm sub={sub} seo={seo} refetchSettings={refetch} />}
+                  show
+                />
+              </>
+            )}
           </>
         }
       />

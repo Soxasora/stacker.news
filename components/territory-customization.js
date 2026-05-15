@@ -1,7 +1,7 @@
 import { Form, Input, SubmitButton } from './form'
 import { subSeoSchema, subThemeSchema } from '@/lib/validate'
 import { truncateDesc } from '@/lib/domains/seo'
-import { useField } from 'formik'
+import { useField, useFormikContext } from 'formik'
 import { useState } from 'react'
 import { useToast } from './toast'
 import { PUBLIC_MEDIA_URL } from '@/lib/constants'
@@ -10,11 +10,13 @@ import { Button } from 'react-bootstrap'
 import styles from './territory-customization.module.css'
 import { useMutation, useQuery } from '@apollo/client/react'
 import { GET_SUB_THEME, UPSERT_SUB_SEO, UPSERT_SUB_THEME } from '@/fragments/subs'
+import SnIcon from '@/svgs/sn.svg'
 
 // uploads via the presigned-POST flow; the form holds the upload id and the
-// preview url is either the freshly uploaded one or derived from that id.
-function AssetField ({ label, name, hint, defaultAsset, width = 48, height = 48, accept = 'image/*', uploading, onUpload, onSuccess, onError }) {
+// preview is either the freshly uploaded url, derived from that id, or a built-in fallback.
+function AssetField ({ label, name, hint, defaultAsset, brand, width = 48, height = 48, accept = 'image/*', uploading, onUpload, onSuccess, onError }) {
   const [field, , helpers] = useField(name)
+  const formik = useFormikContext()
   const [freshUrl, setFreshUrl] = useState(null)
   const toaster = useToast()
 
@@ -25,15 +27,26 @@ function AssetField ({ label, name, hint, defaultAsset, width = 48, height = 48,
       <label className='form-label'>{label}</label>
       <div className='d-flex align-items-end gap-3'>
         <div className={styles.preview}>
-          {previewUrl && (
-            <img
-              src={previewUrl}
-              alt={`${name} preview`}
-              width={width}
-              height={height}
-              className={styles.previewImage}
-            />
-          )}
+          {previewUrl
+            ? (
+              <img
+                src={previewUrl}
+                alt={`${name} preview`}
+                width={width}
+                height={height}
+                className={styles.previewImage}
+              />
+              )
+            : brand
+              ? (
+                <SnIcon
+                  width={64}
+                  height={64}
+                  className={styles.previewIcon}
+                  style={{ fill: formik.values.primaryColor, filter: `drop-shadow(0 0 6px ${formik.values.primaryColor})` }}
+                />
+                )
+              : null}
         </div>
         <div className='d-flex flex-column gap-2'>
           <div className='d-flex align-items-center gap-2'>
@@ -75,15 +88,14 @@ function AssetField ({ label, name, hint, defaultAsset, width = 48, height = 48,
 const SN_DEFAULTS = {
   primaryColor: '#FADA5E',
   secondaryColor: '#F6911D',
-  linkColor: '#007cbe',
-  brandColor: '#FADA5E'
+  linkColor: '#007cbe'
 }
 
 // if the value is the fallback, return null; otherwise, return the value
 const normalizeColorOverride = (value, fallback) =>
   value && value !== fallback ? value : null
 
-export function TerritoryThemeForm ({ sub, hasDomain, domainLoading, refetchSettings }) {
+export function TerritoryThemeForm ({ sub, refetchSettings }) {
   const [upsertSubTheme] = useMutation(UPSERT_SUB_THEME)
   const { data } = useQuery(GET_SUB_THEME, {
     variables: { subName: sub.name },
@@ -132,6 +144,7 @@ export function TerritoryThemeForm ({ sub, hasDomain, domainLoading, refetchSett
         hint='shown in the nav (in place of the SN icon)'
         width={64}
         height={64}
+        brand
         uploading={uploading}
         onUpload={() => setUploading(true)}
         onSuccess={() => setUploading(false)}
@@ -161,13 +174,13 @@ export function TerritoryThemeForm ({ sub, hasDomain, domainLoading, refetchSett
         />
       </div>
       <div className='mt-3 d-flex justify-content-end'>
-        <SubmitButton variant='primary' disabled={domainLoading || !hasDomain || uploading}>save theme</SubmitButton>
+        <SubmitButton variant='primary' disabled={uploading}>save theme</SubmitButton>
       </div>
     </Form>
   )
 }
 
-export function TerritorySeoForm ({ sub, seo, hasDomain, domainLoading, refetchSettings }) {
+export function TerritorySeoForm ({ sub, seo, refetchSettings }) {
   const [upsertSubSeo] = useMutation(UPSERT_SUB_SEO)
   const [uploading, setUploading] = useState(false)
 
@@ -230,7 +243,7 @@ export function TerritorySeoForm ({ sub, seo, hasDomain, domainLoading, refetchS
         hint='the page description of your territory, defaults to the territory description if left blank'
       />
       <div className='mt-3 d-flex justify-content-end'>
-        <SubmitButton variant='primary' disabled={domainLoading || !hasDomain || uploading}>save SEO</SubmitButton>
+        <SubmitButton variant='primary' disabled={uploading}>save SEO</SubmitButton>
       </div>
     </Form>
   )
