@@ -6,7 +6,7 @@ import BackArrow from '../../svgs/arrow-left-line.svg'
 import { useCallback, useEffect, useState } from 'react'
 import Price from '../price'
 import SubSelect from '../sub-select'
-import { USER_ID } from '../../lib/constants'
+import { PUBLIC_MEDIA_URL, USER_ID } from '../../lib/constants'
 import NoteIcon from '../../svgs/notification-4-fill.svg'
 import { useMe } from '../me'
 import { abbrNum } from '../../lib/format'
@@ -23,11 +23,17 @@ import SwitchAccountList, { nextAccount, useAccounts, useIsLurker } from '@/comp
 import { useShowModal } from '@/components/modal'
 import { ObstacleButtons } from '@/components/obstacle'
 import { numWithUnits } from '@/lib/format'
+import { useDomain } from '@/components/territory-domains'
 
 export function Brand ({ className }) {
+  const { domain } = useDomain()
+  const logoUrl = domain?.subTheme?.logoId ? `${PUBLIC_MEDIA_URL}/${domain.subTheme.logoId}` : null
+
   return (
     <Navbar.Brand as={Link} href='/' className={classNames(styles.brand, className)}>
-      <SnIcon width={36} height={36} />
+      {logoUrl
+        ? <img src={logoUrl} alt='site logo' width={36} height={36} className={styles.brandImage} />
+        : <SnIcon width={36} height={36} />}
     </Navbar.Brand>
   )
 }
