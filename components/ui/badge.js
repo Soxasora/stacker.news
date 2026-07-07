@@ -1,9 +1,8 @@
 import { cn } from '@/lib/cn'
 import styles from './badge.module.css'
 
-// devnotes: bootstrap used em values that are relative to the parent font size, let's keep it why not?
-// see: playground badge section
-const BASE = 'inline-block px-[0.65em] py-[0.35em] text-[0.75em] font-bold leading-none text-center whitespace-nowrap rounded-md'
+// text-xs carries a paired line-height token; leading-none beats it in compiled output order
+const BASE = 'inline-block px-2 py-0.5 text-xs font-bold leading-none text-center whitespace-nowrap rounded-md'
 
 /**
  * generates the class names for a badge based on the variant

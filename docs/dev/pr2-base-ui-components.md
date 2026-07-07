@@ -10,7 +10,7 @@ Scope decisions locked with sox:
 ## 0. Progress track
 
 - **🔄 Strategy revision 2026-07-06 (read first — supersedes value specs below).** Decided with sox: native-first, no pixel parity (master plan §Strategy revision). Locked: hybrid module skins **stay** (keystone 6, now with a native-values rule); `@theme` gets `--text-base: .93rem` + `--text-base--line-height: 1.75` (type identity as a token); subtle ~150ms native transitions **adopted** (keystone 5 rewritten — affects C3+ popup chrome; write `data-starting-style` CSS now, with `prefers-reduced-motion` off-switch); `rounded-sn` → stock `rounded-md` (drop token + cn.js classGroup); Container → single `max-w-4xl`.
-  **C2.5 native-value rework ✅ done (2026-07-06, same day; sox eyeball QA pending — light + dark + branded territory).** As landed:
+  **C2.5 native-value rework ✅ done (2026-07-06, same day; sox eyeball QA passed 2026-07-07 — "really nice and almost exact" at nearest-native).** As landed:
   - **Tokens**: `@theme` gains `--text-base: .93rem` + `--text-base--line-height: 1.75` (pre-landing grep confirmed 0 existing `text-base` uses); `--sn-radius`/`--radius-sn` deleted (zero consumers outside tailwind.css); `lib/cn.js` drops the `rounded-sn` classGroup (`font-bolder`/`text-reset` stay — in use).
   - **Button**: BASE `text-base rounded-md` (line-height rides the token pair); sm `px-2 py-1 text-sm rounded-sm` (paddings were already native), md `px-4 py-1.5` (nearest steps to .42rem/1.1rem), lg `px-4 py-2 text-lg rounded-lg`; the 14 module skins untouched. ⚠️ **C9a**: inputs must use md's `px-4 py-1.5` or InputGroups misalign (comment carried in button.js).
   - **Badge**: `px-2 py-0.5 text-xs rounded-md` (em-scaling dropped); call-site nudges: `ms-[0.1rem]`→`ms-0.5` (kept — badges would touch preceding text without), all `-mt-px` vertical nudges deleted. `leading-none` still wins over text-xs's paired line-height (verified in compiled output order).
@@ -20,17 +20,18 @@ Scope decisions locked with sox:
   - **Left as deliberate one-offs**: `lg:z-[900]` (rewards page; rewire to `var(--sn-z-sticky)` at PR3), playground `max-w-[1100px]`, badge `[--sn-badge-opacity:0.75]` (a var write, not a value), alert module's hand-drawn border-radius.
   - **Gates**: residue grep 0 across components/pages/wallets/lib/scripts; `npx standard` clean on all 36 touched files; compiled-CSS check (standalone CLI 4.3.1 — host node_modules lacks the darwin lightningcss binary, app builds in Docker) confirms `.text-base` emits the .93rem/1.75 tokens and `rounded-sn`/`--radius-sn` are gone from output.
 - **C0 ✅ done (2026-07-05).** `@base-ui/react@1.6.0` + `tailwind-merge@3.6.0` installed. `lib/cn.js` ships `extendTailwindMerge` teaching it our custom tokens (`rounded-sn`, `font-bolder`, `text-reset`) — **every future custom theme token needs a matching classGroups entry or overrides silently stop merging** (unknown `text-*` is misclassified as a color). z-ladder landed with one addition over plan: `--sn-z-drawer-backdrop: 1040` (Drawer.Backdrop must sit under the modal backdrop, per compiled `$zindex-offcanvas-backdrop`). Four aliases added to `:root`: `--sn-primary-text`, `--sn-secondary-text`, `--sn-link-color`, `--sn-link-hover-color` (link pair deliberately NOT named `--sn-link` — dodges the PR3 `--theme-link` rename collision).
-- **C1 ✅ done (2026-07-05, QA passed same day: per-variant hover parity, branded-territory retint light+dark, link weight/dark-mode color, notifications retry, post buttons, ots `<a>` downloads).** `ui/button.js` (Base UI Button; `buttonClasses({ variant, size, className })` cva-shape recipe; `href`/`as` render shim) + `button.module.css` with **14 variant skins** — the census said 12, but `outline-warning` (notifications.js) and `outline-grey` (territory-header.js ×2) were hidden inside stuffed `variant` props (utilities smuggled into the prop string — all 3 PR1-flagged sites now unstuffed). Skin design: hover/active hoisted into one `color-mix` formula (verified value-exact vs compiled CSS; `--sn-btn-mix` flips shade/tint), variant class names = variant strings (`styles[variant]`, Next's `exportLocalsConvention: 'asIs'`). Swept: 28/35 import swaps, all §4b `btn btn-*` string sites, all §4c link-Buttons (post.js was 9 nested sites, not 6), notifications inline `--bs-btn-*` → `--sn-btn-hover-color`, `size='md'` confirmed a phantom (no `.btn-md` ever existed — `md` ≡ default, keep it that way). Deferred whole-file per risk 7a: `user-header.js`, `item-act.js`, `pages/settings/index.js`, `pages/rewards/index.js`, `wallets/.../home/actions.js`, `form.js` → C9a; `login-button.js` → C5 (ButtonGroup = same corner-joining trap). **Note:** the Button `href`/`as` shim now has zero consumers — when C9a converts `actions.js:55`, decide whether to drop it.
-- **C2 🔨 in progress.** Spec expanded in §11 (censused 2026-07-05): Badge 16 sites/7 files (§4b's "~14 raw badge strings" was a miscount — zero raw strings exist), Alert 11 sites/9 files (`info`/`danger`/`warning` only), Container 10 sites/9 files, Row/Col 8 files, Image 8 sites/5 files. Key design call in §11.0: badge/alert **colors stay module-side** because layered-`!important` utilities would beat even the consumers' `!important` module skins.
+- **C1 ✅ done (2026-07-05, QA passed same day: per-variant hover parity, branded-territory retint light+dark, link weight/dark-mode color, notifications retry, post buttons, ots `<a>` downloads).** `ui/button.js` (Base UI Button; `buttonClasses({ variant, size, className })` cva-shape recipe; `href`/`as` render shim) + `button.module.css` with **14 variant skins** — the census said 12, but `outline-warning` (notifications.js) and `outline-grey` (territory-header.js ×2) were hidden inside stuffed `variant` props (utilities smuggled into the prop string — all 3 PR1-flagged sites now unstuffed). Skin design: hover/active hoisted into one `color-mix` formula (verified value-exact vs compiled CSS; `--sn-btn-mix` flips shade/tint), variant class names = variant strings (`styles[variant]`, Next's `exportLocalsConvention: 'asIs'`). Swept: 28/35 import swaps, all §4b `btn btn-*` string sites, all §4c link-Buttons (post.js was 9 nested sites, not 6), notifications inline `--bs-btn-*` → `--sn-btn-hover-color`, `size='md'` confirmed a phantom (no `.btn-md` ever existed — `md` ≡ default, keep it that way). Deferred whole-file per risk 7a: `user-header.js`, `item-act.js`, `pages/settings/index.js`, `pages/rewards/index.js`, `wallets/.../home/actions.js`, `form.js` → C9a; `login-button.js` → C5 (ButtonGroup = same corner-joining trap). **Note:** the Button `href`/`as` shim now has zero consumers — when C9a converts `actions.js:55`, decide whether to drop it. **Correction 2026-07-07 (sox QA):** the unstuffing dropped the stuffed `rounded` utility at the two territory-header sites (notifications kept its as `rounded-md`) — under Bootstrap that `rounded` (0.4rem, `!important` utility) beat `.btn-sm`'s 0.25rem, so those sm buttons matched the md radius; without it they fell to the recipe's `rounded-sm` and visibly changed. Restored as call-site `rounded-md` (the codemod-map value for BS `rounded`; className beats the size recipe via twMerge). Every other `size='sm'` site (~24) was a true `.btn-sm` painting 0.25rem, so the recipe's `rounded-sm` is exact parity there — verified end-to-end at runtime (headless render of /dev/playground: BS sm and SN sm both compute 0.25rem).
+- **C2 ✅ done (2026-07-07).** Spec expanded in §11 (censused 2026-07-05): Badge 16 sites/7 files (§4b's "~14 raw badge strings" was a miscount — zero raw strings exist), Alert 11 sites/9 files (`info`/`danger`/`warning` only), Container 10 sites/9 files, Row/Col 8 files, Image 8 sites/5 files. Key design call in §11.0: badge/alert **colors stay module-side** because layered-`!important` utilities would beat even the consumers' `!important` module skins.
   - **Badge ✅ done 2026-07-06** per §11.1 (as revised): `ui/badge.js` + 7 variants incl. `.grey`, which absorbs the `item.module.css .newComment` + `notifications.module.css .badge` shout-skins (deleted, along with item `.badge` + comment `.op`); all 16 sites swapped; gates pass (react-bootstrap Badge grep 0, `bg-opacity` grep 0, standard clean). Visual QA passed 2026-07-06.
   - **Alert ✅ done 2026-07-06** per §11.2, with the devtools check done by direct sass compile instead (same method as the tokens doc): all six light/dark color-mix values verified value-exact against emitted CSS, and both §11.2 open questions resolved — `$btn-close-bg: none` (globals.scss:96) already kills Bootstrap's svg, but `opacity: .5`/hover `.75` ARE painted. So `.close` **deviates from the §11.2 sketch by design**: `color: #000` + `.5`/`.75` opacities + gold focus ring `rgba(250,218,94,.25)` + dark `color: #fff` (≡ today's `invert(1)` filter on #000), NOT `color: inherit`. All 11 sites/9 files swapped (import-only); globals `.btn-close` rules kept — offcanvas still consumes them until Drawer (C4). Gates pass (react-bootstrap Alert grep 0, standard clean). Visual QA passed 2026-07-06.
-  - **Container ✅ done 2026-07-06** per §11.3, verbatim from the sketch: `ui/container.js` Tailwind-only recipe (`w-full mx-auto px-4 sm:max-w-[540px] md:max-w-[720px] lg:max-w-[900px]`, polymorphic `as`, no `fluid`). All 10 sites/9 files swapped (import-only; JSX untouched — sticky-bar.js and static.js keep `{ Nav, Navbar }` rb imports). §11.3's open question resolved: PullToRefresh **does** forward `className` onto its `<main>` (pull-to-refresh.js:80) — it doesn't spread other props, but layout.js passes only `className`+children so nothing is dropped. Also verified: no SN stylesheet keys off the `.container` selector (logger.module.css's `.container` is a scoped local class), so the class name vanishing from the DOM breaks nothing; the tailwind.css:41 `container` blocklist stays until PR3 but is no longer load-bearing. Gates pass (react-bootstrap Container grep 0, standard clean). Visual QA passed 2026-07-06.
-  - **Next (handoff to fresh session): Row/Col (§11.4)**, then Image (§11.5), fee-button Table (§11.6), territory-header CardFooter (§11.7) — that exhausts C2; close with the §11.9 gates + visual-diff pass. Working pattern established by Badge/Alert/Container: recipe lives in `components/ui/<name>.js` (+ `<name>.module.css` only when colors/state need a skin, per §11.0), consumers import from `@/components/ui/<name>`, JSX prop surfaces stay verbatim; per-family gates = import grep → 0 + `npx standard` on touched files; log each family here with date, deviations, gates, QA status. Open items a new session must not skip:
-    - §11.4 Row/Col is **no wrapper — inline utilities** per the swap table + per-site map (8 files, including §11.8's swept deferred files form.js + pages/rewards/index.js). Before/while swapping: (1) check lightning-auth.js callers — if only `md=12 lg=6` defaults are ever passed, fold to `lg:w-1/2` and delete the props; (2) verify once in compiled CSS that a consumer longhand (`ps-0`) beats the recipe shorthand (`px-4`) — both layered-important, only Tailwind's shorthand-before-longhand output order decides (§11.10 risk 2).
-    - §11.5 Image includes user-header.js:102 per §11.8; job-form.js:45 `roundedCircle` → `rounded-full` is the one non-verbatim swap.
-    - §11.6 Table needs the two fee-button.module.css additions (border-collapse; td line-height/vertical-align) — they're load-bearing, not cosmetic.
-    - §11.7 CardFooter has one devtools check left (does today's footer paint `.card-footer:last-child` bottom radius inside AccordianCard → if yes, add the border-radius line).
-- **C3+ ⬜ not started.**
+  - **Container ✅ done 2026-07-06** per §11.3, verbatim from the sketch: `ui/container.js` Tailwind-only recipe (`w-full mx-auto px-4 sm:max-w-[540px] md:max-w-[720px] lg:max-w-[900px]` — as first landed; C2.5 replaced the tiers with a single `max-w-4xl` the same day, see §11.3), polymorphic `as`, no `fluid`. All 10 sites/9 files swapped (import-only; JSX untouched — sticky-bar.js and static.js keep `{ Nav, Navbar }` rb imports). §11.3's open question resolved: PullToRefresh **does** forward `className` onto its `<main>` (pull-to-refresh.js:80) — it doesn't spread other props, but layout.js passes only `className`+children so nothing is dropped. Also verified: no SN stylesheet keys off the `.container` selector (logger.module.css's `.container` is a scoped local class), so the class name vanishing from the DOM breaks nothing; the tailwind.css:41 `container` blocklist stays until PR3 but is no longer load-bearing. Gates pass (react-bootstrap Container grep 0, standard clean). Visual QA passed 2026-07-06.
+  - **Row/Col ✅ done 2026-07-07** per the revised §11.4 (native gap/grid — see there for the full revision rationale and per-site map). All 8 files + 1 caller (settings/logins.js) swapped; `md`/`lg` → `stacked` on LightningExplainer/LightningAuthWithExplainer; QR columns use `max-w-75` (TW4 dynamic spacing ≡ 300px, no `--spacing` override exists). Gates pass (react-bootstrap Row|Col grep → 0 across components/pages/wallets/lib; standard clean on all 9 touched files). Visual QA passed 2026-07-07 (sox; the intended §11.4 deltas accepted).
+  - **Image ✅ done 2026-07-07** per §11.5, verbatim from the sketch: all 8 sites/5 files are plain `<img>` tag swaps (props kept as-is), incl. the §11.8 deferred-file site user-header.js:102; job-form.js:45 `roundedCircle` → `className='rounded-full'` is the one non-verbatim swap. No wrapper, no module. Import lines dropped where Image was the only rb import (item-job.js, job-form.js, user-list.js); user-header.js keeps Button/InputGroup/Nav (C9a) and offcanvas.js keeps Dropdown/Nav/Navbar/Offcanvas (C4/C6), each just losing the Image specifier. Gates pass (react-bootstrap Image grep 0, `roundedCircle` grep 0, standard clean on all 5 files). Visual QA passed 2026-07-07 (sox).
+  - **Table ✅ done 2026-07-07** per §11.6, verbatim from the sketch: fee-button.js Receipt is a plain `<table className={styles.receipt}>` (`borderless`/`size='sm'` dropped, `align='right'` tds kept); both load-bearing module additions landed (`.receipt { border-collapse: collapse }`, `.receipt td { line-height: 1.2rem; vertical-align: top }`). Import line dropped (Table was the only rb import). Gates pass (react-bootstrap Table grep 0, standard clean). Visual QA passed 2026-07-07 (sox).
+  - **CardFooter ✅ done 2026-07-07** — but NOT per the §11.7 sketch: the pre-flight check (the one open devtools question) found the sketched skin was chasing paint that doesn't exist. Bootstrap 5.3's `.card-footer` rules are all `var(--bs-card-*)`-based and those vars are defined **only on `.card`** — a class SN never renders (zero rb `Card` imports, no raw `card` class strings; this footer's ancestors are `.accordion-body` / popover / modal). Every declaration — padding, bg, border-top, the `:last-child` radius — is invalid at computed-value time ⇒ today's footer paints **nothing** from the class. So the swap is a pure class-drop: `<CardFooter className={'py-1 ' + styles.other}>` → `<div>` same className; **no** item.module.css addition, **no** `px-4` (painted padding-x today is 0). §11.7 rewritten as-built; §11.11 handoff shrank (card footer consumes zero `--bs-*` vars). Gates pass (react-bootstrap CardFooter grep 0, standard clean). Visual QA passed 2026-07-07 (sox — footer unchanged).
+  - **C2 closed 2026-07-07** — all seven families landed; §11.9 mechanical gates pass (import grep → 0, `bg-opacity` grep → 0, sole hits = the exempted `pages/dev/playground.js`; alert color parity verified by sass compile, see Alert entry); visual-diff pass done by sox 2026-07-07 (all four pending families + C2.5 eyeball QA — verdict "really nice and almost exact"). **Next: C3.** Working pattern established by Badge/Alert/Container, for reuse in C3+: recipe lives in `components/ui/<name>.js` (+ `<name>.module.css` only when colors/state need a skin, per §11.0), consumers import from `@/components/ui/<name>`, JSX prop surfaces stay verbatim; per-family gates = import grep → 0 + `npx standard` on touched files; log each family here with date, deviations, gates, QA status.
+- **C3 🔵 spec'd 2026-07-07 (§12, fresh census same day) — implementation not started, spec under review.** Census corrections vs Table A: OverlayTrigger dies in **3** files here, not 5 — footer.js (×4 sites) + hoverable-popover.js are click/hover **Popover** overlays and ride C4; rb Tooltip = 4 sites / 3 files (action-tooltip.js, badge.js, login.js ×2); ActionTooltip consumers = 8 files / 12 sites (internals swap, consumers untouched). Two tooltip populations exist today (§12.0): ActionTooltip sites snap (no fade, opacity .9, popper collisions off + `position:fixed` hack), badge/login sites fade 0.15s (rb `Overlay` defaults `transition=Fade`; opacity 1, popper collisions ON). First application of revised keystone 5: ~150ms `data-starting-style`/`data-ending-style` motion in tooltip.module.css with the `prefers-reduced-motion` off-switch — supersedes the old "fadeIn = only surviving popup animation" gate; the globals `fadeIn` keyframe + `.fade.tooltip` become PR3 deletions (§12.4/§12.8; its only other consumer `.spin.fade-in` is already dead in JSX). Verified in Base UI 1.6.0 source during spec: `delay`/`closeDelay` live on **Trigger** (default 600/0), and `Tooltip.Provider`'s values cascade (`delay ?? providerDelay ?? 600`) — the `_app.js` Provider carries `delay={0} closeDelay={0}` for OverlayTrigger parity.
+- **C4+ ⬜ not started.**
 
 ## 1. Ground rules
 
@@ -43,13 +44,9 @@ All six master-plan keystones bind. The two that component commits trip over mos
 
 **State-attribute glossary** (so commits don't re-derive it): `[data-popup-open]` `[data-highlighted]` `[data-checked]` `[data-pressed]` `[data-selected]` `[data-disabled]` `[data-invalid]` `[data-panel-open]`. (`[data-starting-style]`/`[data-ending-style]` exist but stay unused — no animations.)
 
-## 2. Commit 0 — dependencies & infra
+## 2. Commit 0 — dependencies & infra ✅ shipped
 
-- `npm i @base-ui/react@^1.6.0 tailwind-merge`. **Base UI is NOT currently installed** (the master plan previously said otherwise — stale). The package is `@base-ui/react`; do NOT install the dead `@base-ui-components/react` (stopped at 1.0.0-rc.0). Peers: `react ^17||^18||^19` — repo is on React 19.2.6 ✓; `date-fns`/`@date-fns/tz` peers are optional, no extra installs.
-- `lib/cn.js` (new).
-- z-index ladder as tokens in `styles/tailwind.css` `:root`: `--sn-z-sticky: 900; --sn-z-dropdown: 1000; --sn-z-drawer-backdrop: 1040; --sn-z-drawer: 1045; --sn-z-backdrop: 1050; --sn-z-modal: 1055; --sn-z-popover: 1070; --sn-z-tooltip: 1080; --sn-z-toast: 1090`. Base UI portals popups to `<body>`, so this ladder is the single stacking authority; all popup-chrome modules consume these vars.
-- `Tooltip.Provider` lands in the Tooltip commit (C3), not here. No Base UI Toast viewport ever (deviation D2).
-- State in the PR description: **Menu/dropdowns are `modal={false}` everywhere** (Bootstrap dropdowns never scroll-locked); Dialog and Drawer stay modal (Bootstrap modal/offcanvas do lock scroll + backdrop).
+As-built log in §0. Standing decisions that outlive C0: the `--sn-z-*` ladder in `styles/tailwind.css` is the **single stacking authority** (Base UI portals every popup to `<body>`; popup-chrome modules consume the vars, never literal z-indexes); **Menu/dropdowns are `modal={false}` everywhere** while Dialog and Drawer stay modal (state this in the PR description); no Base UI Toast viewport ever (D2); `Tooltip.Provider` lands in C3.
 
 ## 3. Directory & file layout
 
@@ -61,8 +58,9 @@ components/ui/
                                      # ALSO exports buttonClasses() for link-as-button sites (§4b/§4c) and Toggle/Menu triggers
   alert.js  + alert.module.css       # color variants + lightning-font X dismiss
   badge.js  + badge.module.css       # color variants
-  container.js                       # Tailwind-only; compiled max-widths (sm 540/md 720/lg 900 — verify in devtools)
-  tooltip.js + tooltip.module.css    # the fadeIn keyframe lives here
+  container.js                       # Tailwind-only; single max-w-4xl cap (C2.5 — the 540/720/900 tiers are gone)
+  tooltip.js + tooltip.module.css    # green chrome + keystone-5 starting/ending-style motion
+                                     # (globals' fadeIn keyframe dies at PR3 — §12.4)
   popover.js + popover.module.css    # chrome + arrow; shared by hoverable-popover, upvote, ToC, link editor
   dropdown.js + dropdown.module.css  # Menu-based; .dropdown-menu/.dropdown-item chrome duplicated under local names
   drawer.js  + drawer.module.css     # placements: end | bottom; backdrop; zero transitions
@@ -125,19 +123,9 @@ Files the old plan missed, now in scope: `components/editor/plugins/mentions.js`
 
 **Gate (C11, second gate alongside the import grep):** extend PR1's AST-based `scripts/codemods/bs-utility-check.js` with a component-class blocklist (`btn`, `btn-*`, `form-control`, `form-select`, `form-label`, `form-check*`, `invalid-feedback`, `dropdown-item`, `dropdown-divider`, `nav-link`, `modal-*`, `alert-*`, `btn-close`, `badge`, `input-group*`) and require zero hits — it already tokenizes string literals, template chunks, and `classNames()` calls correctly, which a plain grep can't (must not flag `styles.badge` etc.).
 
-### 4c. `Button` used as a link (fix in C1, once `ui/button.js` exists)
+### 4c. `Button` used as a link ✅ done in C1 (2026-07-05)
 
-Base UI's `Button` doesn't support link semantics (no `href`, no anchor rendering) — deliberately deferred until `ui/button.js` lands, since fixing these now against the react-bootstrap `Button` would just be thrown away. Census 2026-07-05:
-
-| Pattern | Where | Fix |
-|---|---|---|
-| `<Button href=...>` direct | `components/item-job.js:132-136` ("apply"), `pages/items/[id]/ots.js:45` + `:47` (preimage/ots downloads) | style `<a>`/`<Link>` with `buttonClasses()` instead |
-| `<Button as={Link} href=...>` | `wallets/client/components/home/actions.js:55` ("configure") | same file's line 46 already does this correctly on a plain `<Link>` — copy that pattern |
-| `<Button>` nested inside `<Link>` (Link owns the `href`, Button is just the visual skin — same underlying problem, and invalid HTML nesting today regardless) | `components/post.js:56-58, 65-67, 72-74, 75-77, 80-82, 83-85` (poll/bounty/link/discussion), `components/territory-header.js:130-132` ("edit territory") | same fix — style the `Link` directly, drop the nested `Button` |
-
-`ui/button.js` exports `buttonClasses()` per §3, so every row above resolves to the same one-line swap: `<Link href={...} className={buttonClasses({ variant, size })}>label</Link>`. Do this sweep as part of C1 once `buttonClasses()` exists, not before.
-
-**✅ Done (2026-07-05), with census corrections:** post.js had **9** nested sites, not 6 (lines 40/48 and the `job` button at :128 were missed); `onClick={checkSession}` moved onto the Links that had it on the inner Button. `territory-header.js:131` doubled as a stuffed-variant site (`variant='outline-grey border-2 …'`) — unstuffed to `variant='outline-grey'` + utilities in `className`. `actions.js:55` rides C9a with its deferred file — last consumer of Button's `href`/`as` shim; drop the shim then.
+Base UI's `Button` has no link semantics, so every `<Button href>`, `<Button as={Link}>`, and Button-nested-in-Link site (invalid HTML nesting anyway) became a plain `Link`/`<a>` styled with `buttonClasses({ variant, size })`. Census corrections logged: post.js had **9** nested sites, not 6; `onClick={checkSession}` moved onto the Links; `territory-header.js:131` doubled as a stuffed-variant site, unstuffed to `variant='outline-grey'` + utilities in `className`. Still open: `wallets/.../home/actions.js:55` rides C9a with its deferred file — **last consumer of Button's `href`/`as` shim; drop the shim then**.
 
 ## 5. Table B — hand-rolled → Base UI (broad adoption)
 
@@ -218,7 +206,7 @@ Selection is **derived, not stored**: `const [{ value: amount }] = useField('amo
 | C0 ✅ | infra | `npm i @base-ui/react@^1.6.0 tailwind-merge`; `lib/cn.js`; `--sn-z-*` ladder; conventions in PR description | build passes |
 | C1 ✅ | Button | `ui/button.js` (+module, 14 skins) on Base UI Button; swap 35 files incl. wallets (7 deferred per risk 7a/§0; Tips stay Buttons until C12); §4b `btn btn-*` string sites → `buttonClasses()` incl. the dynamic `nav/common.js:400` ternary; §4c link-Button sweep | branded-territory hover retint, light+dark ✓ QA 2026-07-05 |
 | C2 | static leaves | Badge/Alert/Image/Container + Row/Col utility swaps + Table (`fee-button.js`) + CardFooter (`territory-header.js`) — **full spec §11** | visual diff |
-| C3 | Tooltip | `ui/tooltip.js`; `Tooltip.Provider` in `_app.js`; `action-tooltip.js` internals; direct files | fadeIn = only surviving popup animation |
+| C3 | Tooltip | `ui/tooltip.js`; `Tooltip.Provider` in `_app.js`; `action-tooltip.js` internals; direct files — **full spec §12** | import grep → 0; ~150ms starting/ending-style motion + reduced-motion off-switch (supersedes "fadeIn = only surviving animation" — §12.4) |
 | C4 | Popover/PreviewCard | `ui/popover.js`; `hoverable-popover.js` internals; upvote Overlay → anchored Popover | hover cards 500/300 delays |
 | C5 | Dropdown/Menu | `ui/dropdown.js` (`modal={false}`, dual-mode Item); `action-dropdown.js`; 20 files incl. split login (§6.8), ToC (§6.5), mentions (§6.4); upvote.js finishes | no scroll-lock; viewport-edge collision |
 | C6 | Dialog | `modal.js` internals + `modal.module.css`; ~25 consumers untouched | zap→QR→back stack; keepOpen |
@@ -262,7 +250,7 @@ Master plan's checklist (modal stack, toast dedup, dropdown edges, @/~ keyboard,
 4. **`Collapsible.Panel` wrapper div in flex-wrap rows** — `className='contents'`.
 5. **Menu default scroll-lock** — `modal={false}` everywhere (repeat of master risk 5, it will bite otherwise).
 6. **Barrel-split regressions** — C9a is move-only + Input swap; review the diff keyed on the 25-export list.
-7. **InputGroup corner-joining vs the utility cascade** — Bootstrap flattens grouped children's inner corners with unlayered-normal rules; the Button recipe's `rounded-sn` is layered-`!important` and beats them. Two consequences: (a) **C1 must NOT swap Buttons nested inside live InputGroups** — resolved by deferring the WHOLE files (single-import cleanliness): user-header.js, item-act.js, pages/settings/index.js, pages/rewards/index.js, wallets home/actions.js, form.js → C9a; login-button.js → C5 (ButtonGroup, same trap); (b) the new `form/input-group.js` cannot flatten child corners from its module (same cascade loss) — it must inject `rounded-s-none`/`rounded-e-none` utilities into first/middle/last children.
+7. **InputGroup corner-joining vs the utility cascade** — Bootstrap flattens grouped children's inner corners with unlayered-normal rules; the Button recipe's radius utilities (`rounded-md`/`rounded-sm` since C2.5 — was `rounded-sn`) are layered-`!important` and beat them. Two consequences: (a) **C1 must NOT swap Buttons nested inside live InputGroups** — resolved by deferring the WHOLE files (single-import cleanliness): user-header.js, item-act.js, pages/settings/index.js, pages/rewards/index.js, wallets home/actions.js, form.js → C9a; login-button.js → C5 (ButtonGroup, same trap); (b) the new `form/input-group.js` cannot flatten child corners from its module (same cascade loss) — it must inject `rounded-s-none`/`rounded-e-none` utilities into first/middle/last children.
 
 ## 11. C2 expansion — static leaves (censused 2026-07-05)
 
@@ -278,148 +266,59 @@ Badge is the first component whose consumers override the skin from **module CSS
 
 This regime is **transitional** (decided 2026-07-05): the utility `!important` exists only to out-shout Bootstrap's unlayered CSS, and is scheduled for removal after PR3 — see the master plan's post-migration **cascade de-escalation** cleanup (drops the flag *paired* with wrapping skins in `@layer components`, preserving the utilities-win contract without `!important`). Until then the buckets above bind; the var-based skins C2 builds are already the shape the end-state needs.
 
-### 11.1 `ui/badge.js` + `badge.module.css`
+### 11.1 `ui/badge.js` + `badge.module.css` ✅ shipped (see §0; recipe values revised by C2.5)
 
-API mirrors Button: `badgeClasses({ variant, className })` + default-export `<Badge variant className>` rendering a `<span>`. Unlike react-bootstrap there is **no default variant** (rb defaults to `primary`; every SN site passes `bg` explicitly or `bg={null}`) — omitted `variant` ⇒ skin-only badge, background transparent.
+Decisions that bind future work (the module + call sites are canonical for values):
 
-Recipe: `cn(styles.badge, variant && styles[variant], BASE, className)` with
-`BASE = 'inline-block py-[0.35em] px-[0.65em] text-[0.75em] font-bold leading-none text-center whitespace-nowrap rounded-sn'`
-(compiled `.badge`: padding `.35em .65em`, font-size `.75em` — em units on purpose, badges scale with context — weight 700, line-height 1, radius `.4rem` = `rounded-sn`). `vertical-align: baseline` is the initial value — deliberately NOT declared; sites that need `middle`/`text-top` set it per-site via call-site utilities (`align-middle`/`align-text-top`).
+- API mirrors Button: `badgeClasses({ variant, className })` + default `<Badge>` span. **No default variant** (rb defaulted to `primary`; every SN site passed `bg` explicitly) — omitted `variant` ⇒ transparent skin-only badge. Only 7 variants exist (`primary` unused): grey / secondary / boost / danger / success / warning / info. `.badge:empty { display: none }` kept (BS parity). `vertical-align` deliberately not declared — sites set `align-middle`/`align-text-top` per-site.
+- `.secondary`/`.boost` skins use the `--bs-*-rgb` triplets so (a) the branded-territory retint flows through (custom-css.js overrides `--bs-secondary-rgb`; territory-header's nsfw badge renders on exactly those pages) and (b) comment.js's `op` badge keeps its 75% alpha via the `--sn-badge-opacity` var, written per-site as `[--sn-badge-opacity:0.75]`. `boost` is in `$theme-colors` so `--bs-boost-rgb` exists until PR3.
+- Text is `#fff` for every Bootstrap-derived variant (BS badge has no YIQ) — do NOT "fix" secondary with `--sn-secondary-text`. `.grey` is the one variant that sets its own text color; it **absorbed** the two legacy shout-skins (`item.module.css .newComment`, `notifications.module.css .badge` — deleted, along with item `.badge` and comment `.op`); their margins became call-site utilities (since C2.5: `ms-0.5`, vertical nudges dropped). Dark mode is free — the `--theme-*` vars flip with the theme. This pre-empts the master plan's de-escalation follow-up (3) for badge.
+- `styles/satistics(.module|_old.module).css .badge` are dead skins no JSX applies — leave for PR3's module sweep.
 
-```css
-.badge { color: var(--sn-badge-color, #fff); background-color: var(--sn-badge-bg, transparent); }
-.badge:empty { display: none; }  /* Bootstrap parity */
-.grey {
-  --sn-badge-color: var(--theme-grey);
-  --sn-badge-bg: var(--theme-clickToContextColor);
-}
-.secondary { --sn-badge-bg: rgba(var(--bs-secondary-rgb), var(--sn-badge-opacity, 1)); }
-.boost     { --sn-badge-bg: rgba(var(--bs-boost-rgb), var(--sn-badge-opacity, 1)); }
-.danger    { --sn-badge-bg: var(--sn-danger); }
-.success   { --sn-badge-bg: var(--sn-success); }
-.warning   { --sn-badge-bg: var(--sn-warning); }
-.info      { --sn-badge-bg: var(--sn-info); }
-```
+### 11.2 `ui/alert.js` + `alert.module.css` ✅ shipped (see §0; Heading sizing revised by C2.5 → `text-xl leading-tight`)
 
-- `.secondary`/`.boost` use the `--bs-*-rgb` triplets so (a) the branded-territory retint flows through (custom-css.js overrides `--bs-secondary-rgb` at `:root`; territory-header's nsfw badge renders on exactly those pages) and (b) the one `bg-opacity-75` site keeps its 75% alpha via `--sn-badge-opacity`. `boost` is in `$theme-colors` (globals.scss:21) so `--bs-boost-rgb` exists until PR3.
-- `.grey` (added 2026-07-06) **absorbs the two copy-pasted legacy shout-skins** — `item.module.css .newComment` and `notifications.module.css .badge` had identical grey-on-clickToContext `!important` colors (only their margins differed; those move to call-site utilities, see the table). Named for its value (`--theme-grey`), matching Button's grey family. Dark mode is free — both `--theme-*` vars already flip with the theme, which is why the old skins never needed a dark selector. This pre-empts the master plan's de-escalation follow-up (3) for badge.
-- Text is `#fff` for every *Bootstrap-derived* variant (Bootstrap badge has no YIQ). Parity — do NOT "fix" secondary with `--sn-secondary-text`. `.grey` is the one variant that sets `--sn-badge-color`, by design.
-- Drop `.btn .badge { top: -1px }` (no badge-in-button sites exist).
-- Only build these 7 variants (`primary` is unused).
+Decisions that bind future work (module + consumers canonical for values):
 
-Site-by-site (16):
+- Compound API preserved so consumers are drop-in: default `Alert` plus `Alert.Heading`/`Alert.Link` as plain function properties. **No `show` prop** — zero sites used it; all gate with conditional rendering. Variants: info / danger / warning only.
+- Skins: one `color-mix` tint/shade pair per variant with a `:global([data-bs-theme='dark'])` block — **PR3 must migrate that selector** (§11.11). The hand-drawn `border-radius: 33% 2% / 11% 74%` is an SN identity one-off (allowed exception to keystone 6d).
+- `.close` deviates from Bootstrap's `.btn-close` **by design** (verified against painted CSS, not the scss — the `$close-*` vars in globals are dead BS4 names): literal lightning-font `X` child (modal.js precedent), `#000` at `.5`/`.75` opacities, gold focus ring, dark-mode `#fff`. globals' `.btn-close` rules stay until Drawer (C4) stops consuming them.
+- `Alert.Link` = bold `text-reset` — the layered-important utility also beats globals' `a:hover` recolor, matching today (alert links don't change color on hover).
+- Non-mechanical consumers to remember: post.js:104 keeps `className='absolute'` + inline `top: -6rem` (the utility beats module `position: relative`); wallets send-error.js passes a **dynamic** `{error.variant}` (`warning`|`danger`, both skins exist) and composes `classNames(styles.fields, 'mt-4 mb-0')` through cn; banners.js exercises the full compound API; snl.js's `onClose` writes localStorage (behavior stays consumer-side); territory-payment-due/notifications embed forms/buttons that stay untouched.
 
-| Sites | Today | C2 swap |
-|---|---|---|
-| item-info.js:175/181/184/190, comment.js:54, item-job.js:92 | `bg={null} className={styles.newComment}` | `variant='grey' className='align-middle -mt-px ms-[0.1rem]'`; **delete `.newComment` from item.module.css** (revised 2026-07-06 — absorbed as `.grey`; the `!important` only existed to beat Bootstrap's `.badge`, which stops matching post-swap). Check comment.js's `itemStyles` import for deadness after |
-| notifications.js:586 | `bg={null} className={styles.badge}` | `variant='grey' className='align-middle ms-2'` (this copy's margin was `0.5rem`, no top nudge); **delete `.badge` from notifications.module.css** |
-| item-job.js:97 | `bg='info' className={styles.badge}` (item.module.css:62, **no** `!important`) | `variant='info' className='align-middle -mt-px ms-[0.1rem]'`; delete `.badge` from item.module.css (sole consumer) — its non-important declarations would be order-dependent vs our module base |
-| comment.js:252 | `` bg={op === 'fwd' ? 'secondary' : 'boost'} className={`${styles.op} bg-opacity-75`} `` | `variant={op === 'fwd' ? 'secondary' : 'boost'} className='align-text-top -mt-px [--sn-badge-opacity:0.75]'`; delete `.op` from comment.module.css (sole consumer, same order-dependence); `bg-opacity-75` is a Bootstrap utility and must not survive C2 |
-| territory-header.js:38/:39 | `bg='danger'`/`bg='secondary'` + `ms-2` | mechanical `variant=` swap, keep `ms-2` |
-| territory-domains.js:33/35/55/56 | `bg='success'/'warning'/'secondary'/'success'` | mechanical |
-| territory-form.js:291 | `bg='secondary'` | mechanical |
+### 11.3 `ui/container.js` ✅ shipped (revised by C2.5 → single `max-w-4xl`)
 
-`styles/satistics.module.css .badge` (and `satistics_old`) match the skin shape but no JSX in components/pages/wallets applies them — treat as dead, leave for PR3's module sweep.
+Tailwind-only recipe (`w-full mx-auto px-4 max-w-4xl`; 896px ≈ the old lg 900px cap, Bootstrap's 540/720 tablet tiers dropped), polymorphic `as` (4 sites), no `fluid` (unused — never built). `px-4` = half of SN's `$grid-gutter-width: 2rem` override. Verified when built: PullToRefresh forwards `className` onto its `<main>` (layout.js passes only `className`+children, nothing dropped); no SN stylesheet keys off a `.container` selector, so the tailwind.css `container` blocklist is no longer load-bearing (still dies at PR3). All 10 sites/9 files swapped import-only. Consumer overrides compose: `px-0` drops the recipe's `px-4` via twMerge; `sm:px-0` coexists (different modifier).
 
-### 11.2 `ui/alert.js` + `alert.module.css`
+### 11.4 Row/Col ✅ done 2026-07-07 (no wrapper — native gap/grid; revised same day from the −mx-4/px-4 replication)
 
-Keep the compound API so consumers are drop-in: default export `Alert({ variant, dismissible, onClose, className, children, ...props })` plus `Alert.Heading` and `Alert.Link` assigned as properties (plain function properties, no classes). No `show` prop — zero sites use it (all gate with conditional rendering), and rb without `show` never animates, so keystone 5 is satisfied for free.
+Revision in the same spirit as C2.5's Container rewrite: Bootstrap's negative-margin/padding gutter is *structure* we don't keep under native-first — it only ever existed because `gap` didn't. New mapping:
 
-```jsx
-<div role='alert' className={cn(styles.alert, styles[variant], dismissible && styles.dismissible, className)} {...props}>
-  {children}
-  {dismissible && <button type='button' className={styles.close} onClick={onClose} aria-label='Close alert'>X</button>}
-</div>
-```
+- **Fractional columns → CSS grid.** `gap` doesn't compose with flex percentage widths (`w-1/2` + `gap-8` overflows and wraps), but grid subtracts gaps from track math natively: `grid grid-cols-2 md:grid-cols-3 gap-x-8`, nothing on the cells.
+- **Bare/auto columns → flex + `gap`.** Equal-split pairs become `grid grid-cols-2 gap-8` or flex children with `grow basis-0`.
+- **Single-`Col` rows are no-ops — delete them.** The col's `px-4` exactly cancelled the row's `-mx-4`; keep a plain `div` only where a utility class lives.
+- **Consumer `ps-0` was gap-choosing in disguise** — every site pairing `px-4` with `ps-0` really wanted a 1rem gap ⇒ `gap-4`. §11.10 risk 2 (shorthand/longhand compiled ordering) is **moot**: there is no gutter padding to cancel.
+- **Behavior parity, not pixel parity**: bare cols sit side-by-side at *all* widths ⇒ unprefixed `grid-cols-2` (chart pairs, lightning wallet lists); fractional cols keep their wrap points; raw non-Col children of a Row (which `.row > *` forced full-width) get block flow instead.
+- **Every grid needs explicit tracks at every width** (found in QA 2026-07-07): a breakpoint-only template (`grid` + `md:grid-cols-2`) leaves mobile cells in *implicit auto tracks*, whose minimum is the content's min-content — the 300px-intrinsic QR svg then overflows narrow viewports (Bootstrap never hit this: `.row > *` width:100% gave cols a definite width for `max-width:100%` to resolve against). Tailwind's `grid-cols-*` emits `minmax(0, 1fr)` precisely to kill that floor ⇒ always pair a base `grid-cols-1` with responsive variants.
 
-```css
-.alert {
-  position: relative;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 33% 2% / 11% 74%;  /* $alert-border-radius; $alert-border-width: 0 → no border rule at all */
-  color: color-mix(in srgb, #000 60%, var(--sn-alert-base));            /* = shade-color($c, 60%) */
-  background-color: color-mix(in srgb, #fff 80%, var(--sn-alert-base)); /* = tint-color($c, 80%) */
-}
-:global([data-bs-theme='dark']) .alert {
-  color: color-mix(in srgb, #fff 40%, var(--sn-alert-base));            /* = tint-color($c, 40%) */
-  background-color: color-mix(in srgb, #000 80%, var(--sn-alert-base)); /* = shade-color($c, 80%) */
-}
-.info    { --sn-alert-base: var(--sn-info); }
-.danger  { --sn-alert-base: var(--sn-danger); }
-.warning { --sn-alert-base: var(--sn-warning); }
-.dismissible { padding-right: 3rem; }
-.close {
-  position: absolute; top: 0; right: 0; z-index: 2;
-  padding: 1.25rem 1rem;
-  background: none; border: 0; color: inherit; cursor: pointer;
-  font-family: lightning; font-weight: 300; font-size: 150%; line-height: 1;
-}
-```
+Risk 5 resolved by checking callers: lightning-auth's `md`/`lg` were **live**, not dead — settings/logins.js passed `md={12} lg={12}` (always stacked) while login.js used the defaults (2-col at ≥lg). Only two shapes exist ⇒ the 12-column props are replaced by a **`stacked` boolean** on `LightningExplainer`/`LightningAuthWithExplainer`; settings/logins.js passes `stacked`, login.js passes nothing.
 
-- **Dark mode is real**: `$enable-dark-mode` is not overridden and `components/dark-mode.js` drives `data-bs-theme` on `:root`, so Bootstrap emits dark `-bg-subtle`/`-text-emphasis` tokens today. The `:global([data-bs-theme='dark'])` block reproduces them (module-file precedent: linkeditor.module.css). `color-mix` in srgb ≡ Sass `mix()` — same equivalence C1 verified value-exact for Button hovers. Expected light values to eyeball in devtools before deleting: info `#cce5f2`/`#00324c`, danger `#f2d6d3`/`#4d140d`, warning `#fde9d2`/`#623a0c`.
-- **Close chrome**: today's dismiss is Bootstrap `.btn-close` restyled by globals.scss:753-789 (lightning font, `::after { content: 'X' }`). We render the glyph as a literal child like modal.js:112 does. **Devtools check before building**: whether Bootstrap's residual svg `background-image` and `opacity: .5`/hover `.75` are visibly part of today's paint — replicate what's actually painted, not what the scss reads like ($close-color/$close-text-shadow in globals are dead Bootstrap-4 var names).
-- `Alert.Heading` = `<div className={cn('text-reset font-medium leading-[1.2] mb-2', H4, className)}>` where `H4` is the fs-4/h4 fluid clamp from [bootstrap-tailwind-tokens.md](./bootstrap-tailwind-tokens.md) (rb renders `.alert-heading.h4`; `.alert-heading` is just `color: inherit`).
-- `Alert.Link` = `<a className={cn('font-bold text-reset', className)} {...props}>` — compiled `.alert-link` color equals the alert text color, so inherit reproduces it; `$link-decoration: none` means no underline handling; layered-important `text-reset` also beats globals' `a:hover`, matching today (alert links don't change color on hover).
+Per-site (8 files):
+- **nostr-auth.js** — main Row → `grid grid-cols-1 md:grid-cols-2 gap-8 w-full text-muted` (`w-full` still needed: `.login` is a centered flex column); left cell `mb-6` (`ps-0` dropped); right cell `w-full max-w-75 mx-auto` (inline style converted — TW4 dynamic spacing, 75 × .25rem ≡ 300px; auto margins center a max-width-capped grid item). The two single-col accordion Rows (extensions / NIP-46 lists) deleted outright.
+- **lightning-auth.js** — main Row → `grid grid-cols-1 gap-8 w-full text-muted` + `lg:grid-cols-2` unless `stacked`; raw-text Row (`mb-4`, no Col) → plain `div mb-4` (also fixes its 1rem `-mx-4` bleed inside the accordion); two wallet lists → `grid grid-cols-2 gap-8`; QR cell as in nostr-auth.
+- **job-form.js** — location + remote row → `flex gap-4` (today's effective gap: `pe-4` + `ps-0` = 1rem); input cell `grow basis-0`, checkbox cell `flex`. `me-0` dropped — it only killed the old right-edge bleed.
+- **territory-form.js** — postTypes → `grid grid-cols-3 sm:flex sm:flex-wrap sm:gap-x-8`; the four cells become plain divs (3-per-row below sm preserved, auto-width inline above).
+- **pages/satistics/graphs/[when].js** — stat tiles → `grid grid-cols-2 md:grid-cols-3 gap-x-8 my-6`, tiles keep `text-center mb-4`; chart pairs → `grid grid-cols-2 gap-x-8` with `mt-4` cells; the empty filler `<Col className='mt-4' />` deleted (a grid track stays empty on its own).
+- **pages/stackers/[sub]/[when].js** — same with `md:grid-cols-4` (tiles, incl. the conditional registrations cell); three chart-pair rows.
+- **form.js** (swept per §11.8) — InputInner Row → `div flex gap-4`, input cell `grow basis-0` (no `min-w-0` — Bootstrap's `.col` had none either), `AppendColumn` → `div flex` (+`invisible` passthrough; `xs='auto'`/`ps-0` dropped, gap provides the 1rem); VariableInput outer Row/Col → plain `div mb-2` — block flow stacks input/hint/feedback naturally (hint loses the old 1rem `.row > *` indent, now consistent with InputInner's own un-indented hint). adv-post-form's render-prop `AppendColumn` flows back into InputInner's row, so no other file changes.
+- **pages/rewards/index.js** (swept per §11.8) — single-col Row → `div pb-4`.
 
-Site-by-site (11) — all keep `variant`/`dismissible`/`onClose`/`className` verbatim, only the import changes; notes on the non-mechanical ones:
-
-| Site | variant | Notes |
-|---|---|---|
-| banners.js:9 (MadnessBanner) | info | dismissible; uses `Alert.Heading` + `Alert.Link` ×4 — compound API keeps it drop-in |
-| banners.js:40 (AuthBanner) | danger | plain `next/link` child, untouched |
-| snl.js:27 | info | `onClose` writes localStorage — behavior stays in consumer |
-| post.js:104 | danger | `className='absolute'` + inline `top: -6rem` — the utility (layered-important) beats module `position: relative` exactly as it beats Bootstrap today |
-| delete.js:71, login.js:118, notifications.js:799, settings/logins.js:188 | danger | mechanical |
-| territory-payment-due.js:37 | danger | not dismissible; `Alert.Heading` ×2; contains a `<Form>` + FeeButton — untouched |
-| notifications.js:808 | info | embeds two `styles.alertBtn` buttons — untouched |
-| wallets/.../send-error.js:11 | **dynamic** `{error.variant}` → `warning`\|`danger` | both skins exist; `classNames(styles.fields, 'mt-4 mb-0')` composes through cn (`mb-0` utility beats module `margin-bottom`) |
-
-### 11.3 `ui/container.js` (Tailwind-only)
-
-```jsx
-export default function Container ({ as: As = 'div', className, ...props }) {
-  return <As className={cn('w-full mx-auto px-4 sm:max-w-[540px] md:max-w-[720px] lg:max-w-[900px]', className)} {...props} />
-}
-```
-
-- `px-4` = 1rem = half of SN's `$grid-gutter-width: 2rem` override (globals.scss:94 — **not** stock Bootstrap's 1.5rem).
-- Max-width map verified at globals.scss:72-76: sm 540 / md 720 / lg 900, **no xl/xxl tiers** — 900px holds for all ≥992px viewports, which `lg:max-w-[900px]` reproduces since nothing overrides it above. Tailwind's `@theme` breakpoints already equal Bootstrap's (576/768/992).
-- `fluid` is unused — don't build it. `as=` is used at 4 sites, keep the polymorphic render.
-- Consumer overrides compose: `px-0` drops the recipe's `px-4` via twMerge; `sm:px-0` coexists with base `px-4` (different modifier), matching today's semantics exactly.
-
-Sites (10): layout.js:21 `as={PullToRefresh}` + `` `sm:px-0 ${styles.contain} ...` `` (verify PullToRefresh spreads className — it receives it from rb today); nostr-auth.js:245 and lightning-auth.js:52 (no props); search.js:70 `px-0` + module; footer.js:156 `mb-4`; nav/desktop/header.js:8 `as='header' px-0`; nav/mobile/header.js:8 `as='header' sm:px-0`; nav/static.js:9 `as='header' sm:px-0`; nav/sticky-bar.js:32 `px-0 hidden md:block` and :48 `sm:px-0 block md:hidden`.
-
-### 11.4 Row/Col swap map (no wrapper — inline utilities)
-
-With the 2rem gutter, `.row` margins are −1rem and col padding 1rem ⇒ Tailwind step `4`:
-
-| Bootstrap output | Utilities |
-|---|---|
-| `.row` | `flex flex-wrap -mx-4` |
-| every `<Col>` | `shrink-0 px-4` plus one of ↓ |
-| `.col` (bare, incl. `xs` and no-prop `<Col>`) | `grow basis-0` (compiles `flex: 1 0 0%`; with basis 0 the `.row > *` width:100% never matters) |
-| `.col-auto` (`xs='auto'`) | `w-auto` |
-| `.col-{n}` | `w-1/2` (6) / `w-1/3` (4) / `w-1/4` (3) |
-| `.col-md` (bare responsive) | `w-full md:grow md:basis-0` (`w-full` reproduces the stacked-below-breakpoint state) |
-| `.col-md-{n}` / `.col-sm-auto` | `w-full md:w-…` / `sm:w-auto` |
-
-Per-site:
-- **nostr-auth.js** — Row:251 (`w-full text-muted`); Col:252 `md` + `ps-0 mb-6` → `shrink-0 px-4 w-full md:grow md:basis-0 ps-0 mb-6`; Row:257 plain → Col:258 bare; Row:301 plain → Col:302 `xs` (= bare); Col:323 `md` + `mx-auto` + `style={{maxWidth:'300px'}}` (style stays).
-- **lightning-auth.js** — same shapes, but `<Col md={md} lg={lg}>` takes `md=12 lg=6` from component props. **Check callers first**: if only defaults are ever passed, `col-md-12` is a no-op (`.row > *` is already full width) ⇒ `shrink-0 px-4 w-full lg:w-1/2 …` and delete the props.
-- **job-form.js** — Row:65 `me-0` ⇒ write `flex flex-wrap -ms-4` (fold the dead right margin instead of stacking `-mx-4 me-0` and betting on output order); Col:66 bare; Col:73 `xs='auto'` + `flex ps-0`.
-- **territory-form.js** — Row:178; Col ×4 `xs={4} sm='auto'` ⇒ `shrink-0 px-4 w-1/3 sm:w-auto`.
-- **pages/satistics/graphs/[when].js** — Row:62 `my-6` → Col ×3 `xs={6} md={4} text-center mb-4` ⇒ `w-1/2 md:w-1/3`; Rows :98/:108 plain → bare Cols with `mt-4`.
-- **pages/stackers/[sub]/[when].js** — same shapes with `md={3}` ⇒ `md:w-1/4`; Rows :128/:138/:148 plain → bare Cols `mt-4`.
-- **form.js** (Row:395/Col:396 bare; Col:671 `xs='auto' flex ps-0`; Row:681 `mb-2`/Col:682) and **pages/rewards/index.js** (Row:85 `pb-4`/Col:86) — swept here per §11.8.
-
-Longhand note: recipes stack `px-4` + consumer `ps-0`. Tailwind sorts shorthands before longhands so `ps-0` should win — **verify once in compiled output** (risk 2 below), since both are layered-important and only source order decides.
-
-### 11.5 Image (plain `<img>`, no wrapper)
+### 11.5 Image ✅ done 2026-07-07 (plain `<img>`, no wrapper)
 
 rb `Image` without boolean props renders a bare `<img>` with no added class — all sites are 1:1 tag swaps keeping `src`/`width`/`height`/`className`/`onClick`: item-job.js:28, user-list.js:41/:69/:120/:204, user-header.js:102 (§11.8), nav/mobile/offcanvas.js:18 (has `onClick`). Exception: job-form.js:45 `roundedCircle` → `rounded-full` (50% vs 9999px — identical on a 135×135 square).
 
-### 11.6 fee-button Table → plain `<table>`
+Landed exactly as sketched (job-form gets `className='rounded-full'` since it had no className before). See §0 for gates and import-line handling in the two files that keep other rb imports.
+
+### 11.6 fee-button Table → plain `<table>` ✅ done 2026-07-07 (landed verbatim)
 
 `<Table className={styles.receipt} borderless size='sm'>` → `<table className={styles.receipt}>`. The module already re-declares almost everything Bootstrap contributed (width, bg, td padding — which beats globals' ≥899px `.table-sm` padding by load order today — colors, tfoot border; `margin: auto` already neutralizes `.table`'s `margin-bottom`). Add to fee-button.module.css what silently came from elsewhere:
 - `.receipt { border-collapse: collapse; }` (currently Bootstrap reboot; PR3 deletes reboot — do it now)
@@ -427,18 +326,11 @@ rb `Image` without boolean props renders a bare `<img>` with no added class — 
 
 `borderless`/`size='sm'` drop with nothing to preserve. The deprecated `align='right'` td attributes stay (parity, out of scope).
 
-### 11.7 territory-header CardFooter → plain `<div>`
+### 11.7 territory-header CardFooter → plain `<div>` ✅ done 2026-07-07 (class-drop only — the sketched skin was never painted)
 
-`<CardFooter className={`py-1 ${styles.other}`}>` → `<div className={`py-1 px-4 ${styles.other} ${styles.cardFooter}`}>` with an item.module.css addition (nearest existing module, already imported as `styles` there):
+Pre-flight finding (2026-07-07, compiled-CSS + DOM census — risk §11.10.3's "painted, not scss" rule striking again): Bootstrap 5.3 compiles `.card-footer` entirely as `var(--bs-card-*)` declarations, and those vars are defined **only on the `.card` selector** — which SN never renders (zero react-bootstrap `Card` imports anywhere; no raw `card` class strings; this footer's ancestors are `.accordion-body` in territory-header, a popover body in sub-popover.js, and modals in sub-select.js / territory-list.js). With the vars unresolvable, every `.card-footer` declaration — padding, background, border-top, and the `:last-child` bottom radius the old open question asked about — is invalid at computed-value time and falls back to `unset` ⇒ **the class paints nothing anywhere in SN**. (It did paint before Bootstrap 5.2's CSS-var refactor compiled the literals away; the footer chrome was silently lost at that upgrade and nobody missed it.)
 
-```css
-.cardFooter {
-  background-color: rgba(var(--bs-body-color-rgb), 0.03);   /* --bs-card-cap-bg */
-  border-top: 1px solid var(--bs-border-color-translucent);
-}
-```
-
-Compiled `.card-footer` padding is `.5rem 1rem`; `py-1` already overrode y, so x becomes `px-4`. Both `--bs-*` vars flip with `data-bs-theme`, so dark mode rides along until PR3. Devtools check: whether today's footer visibly gets `.card-footer:last-child`'s bottom radius inside the AccordianCard — if so, add `border-radius: 0 0 calc(0.4rem - 1px) calc(0.4rem - 1px)`.
+As landed: `<CardFooter className={'py-1 ' + styles.other}>` → `<div>` with the identical className (+ closing tag); `CardFooter` specifier dropped from the import line (`Dropdown` stays until C5). No item.module.css addition, no `px-4`, no radius line — the earlier sketch's `.cardFooter` skin (`--bs-card-cap-bg` bg + `--bs-border-color-translucent` border-top, `px-4`) copied Bootstrap's *intended* values off the `.card` var block, which never applied at this site; landing it would have added a chrome band today's users don't see, in all four render contexts. If the footer band is ever wanted back, that's a new design decision, not migration parity.
 
 ### 11.8 Deferred-file overlap — decision
 
@@ -446,20 +338,223 @@ Three §0-deferred files carry C2 families: form.js (Row/Col ×3 clusters), page
 
 ### 11.9 Gates & QA
 
-- Import grep: `grep -rnE "from 'react-bootstrap" components pages wallets lib | grep -E "\b(Badge|Alert|Container|Row|Col|Image|Table|CardFooter)\b"` → **0**.
-- Raw-utility grep: `grep -rn "bg-opacity" components pages wallets` → **0**.
+- Import grep: `grep -rnE "from 'react-bootstrap" components pages wallets lib | grep -E "\b(Badge|Alert|Container|Row|Col|Image|Table|CardFooter)\b"` → **0**. *(Sole allowed hits: `pages/dev/playground.js` — the untracked dev comparison page imports Bootstrap originals as `Bs*` on purpose; it dies before the PR lands and must not count against this gate or C11's.)*
+- Raw-utility grep: `grep -rn "bg-opacity" components pages wallets` → **0** (same playground exemption).
 - Alert compiled-color parity: devtools-compare all three variants, light **and** dark, against the color-mix values before deleting anything.
-- Visual-diff pass (light + dark): item rows + a comment thread (grey `variant='grey'` chips — subName/nsfw/freebie/downsats; OP badge `fwd` vs `boost` incl. the 75% alpha); job item (stopped chip + company logo); territory header **on a branded custom domain** (nsfw badge must retint via `--bs-secondary-rgb`); territory domains settings (verified/pending/HOLD/active); territory form (nsfw badge in copy; postTypes Row at <576/≥576); notifications (error alert, notify-prompt alert with its Yes/No buttons, autowithdraw chip); login page + lightning/nostr auth at <768/≥768/≥992 (Row/Col grids); post error alert (absolute, `top: -6rem`); wallet send error (warning **and** danger); settings/logins error alert; fee receipt popover (td line-height 1.2rem); territory info footer chrome; all headers + footer + search + sticky bar (container caps 540/720/900, `as=` sites still render `header`/PullToRefresh); satistics + stackers stat grids across the md breakpoint; mobile offcanvas avatar.
+- Visual-diff pass (light + dark): item rows + a comment thread (grey `variant='grey'` chips — subName/nsfw/freebie/downsats; OP badge `fwd` vs `boost` incl. the 75% alpha); job item (stopped chip + company logo); territory header **on a branded custom domain** (nsfw badge must retint via `--bs-secondary-rgb`); territory domains settings (verified/pending/HOLD/active); territory form (nsfw badge in copy; postTypes Row at <576/≥576); notifications (error alert, notify-prompt alert with its Yes/No buttons, autowithdraw chip); login page + lightning/nostr auth at <768/≥768/≥992 (Row/Col grids); post error alert (absolute, `top: -6rem`); wallet send error (warning **and** danger); settings/logins error alert; fee receipt popover (td line-height 1.2rem); territory info footer **unchanged** after the §11.7 class-drop (small grey text, py-1, no bg band / border-top — check all four contexts: territory header accordion, sub hover popover, sub-select info modal, territories list); all headers + footer + search + sticky bar (container cap `max-w-4xl`/896px per C2.5, `as=` sites still render `header`/PullToRefresh); satistics + stackers stat grids across the md breakpoint; mobile offcanvas avatar.
 
 ### 11.10 C2-specific risks
 
 1. **The §11.0 inversion** — never add `text-*`/`bg-*` utilities to `badgeClasses` BASE or to call sites; a layered-important utility beats the module color declarations (even `!important` ones) and freezes the variant in every state.
-2. **`px-4` + `ps-0` longhand ordering** — verify once in compiled CSS that the longhand wins (both layered-important; Tailwind's shorthand-first sort should handle it).
+2. ~~**`px-4` + `ps-0` longhand ordering**~~ — retired by the §11.4 revision (2026-07-07): the gap/grid mapping has no gutter padding for a consumer longhand to fight.
 3. **Alert dark tokens + close-button chrome** — devtools before/after; don't trust the scss reading (dead BS4 `$close-*` vars, possible residual `.btn-close` svg/opacity).
 4. **`as={PullToRefresh}`** (layout.js) — confirm className passthrough so the container padding/max-width land on the wrapper element.
-5. **lightning-auth `md`/`lg` props** may be dead parameters — verify callers before hardcoding `lg:w-1/2`.
+5. ~~**lightning-auth `md`/`lg` props** may be dead parameters~~ — resolved (2026-07-07): callers checked, props were live (settings/logins.js passed `md={12} lg={12}`); replaced with the `stacked` boolean per §11.4.
 6. **CSS-module import order is not a cascade tool** (§11.0) — anything that must beat the ui module base needs `!important` or call-site utilities; that's why item.module.css `.badge`/`.newComment`, comment.module.css `.op`, and notifications.module.css `.badge` are all deleted (absorbed into variants or replaced by utilities) rather than left to race.
 
 ### 11.11 PR3 handoff notes
 
-C2 skins newly consume four `--bs-*` vars that PR3's variable sweep must alias or replace: `--bs-secondary-rgb`, `--bs-boost-rgb` (badge), `--bs-body-color-rgb`, `--bs-border-color-translucent` (card footer). Grep `--bs-` under `components/ui/` + item.module.css when PR3 starts. The alert module's `[data-bs-theme='dark']` selector also survives into PR3's theme mechanism. badge.module.css additionally reads `--theme-grey` + `--theme-clickToContextColor` (`.grey` variant) — SN-owned vars that survive PR3; no action needed, listed so the var-grep result isn't a surprise.
+C2 skins newly consume two `--bs-*` vars that PR3's variable sweep must alias or replace: `--bs-secondary-rgb`, `--bs-boost-rgb` (badge). *(The card-footer pair — `--bs-body-color-rgb`, `--bs-border-color-translucent` — dropped out with the §11.7 revision: no skin was added.)* Grep `--bs-` under `components/ui/` when PR3 starts. Also for PR3: the compiled `.card`/`.card-footer` block is now fully dead CSS (§11.7 proved no `.card` is ever rendered) — safe to confirm-and-drop with the Bootstrap sweep. The alert module's `[data-bs-theme='dark']` selector also survives into PR3's theme mechanism. badge.module.css additionally reads `--theme-grey` + `--theme-clickToContextColor` (`.grey` variant) — SN-owned vars that survive PR3; no action needed, listed so the var-grep result isn't a surprise.
+
+## 12. C3 expansion — Tooltip (censused 2026-07-07)
+
+Fresh per-site census verified against the working tree and `@base-ui/react@1.6.0`'s shipped types/source (not docs-from-memory). Headline numbers, correcting Table A: **rb `Tooltip` = 4 sites / 3 files** (action-tooltip.js:18, badge.js:101, login.js:138 + :170); **OverlayTrigger dies in the same 3 files** — the other two importers, footer.js (×4 sites, `trigger='click'` `rootClose` Popover overlays) and hoverable-popover.js, are **C4's** (their overlays are Popovers; a Base UI Tooltip can't express click-toggle). Table A's "OverlayTrigger ×5 → C3" conflated the two populations. **ActionTooltip consumers: 8 files / 12 sites**, all untouched (internals swap): fee-button.js:220, upvote.js:253, pay-bounty.js:102, comment.js:260, item.js:125, poll.js:22, footer.js:160/:163/:166, editor/plugins/toolbar/index.js:86/:140/:297. **BadgeTooltip** (badge.js:96, exported) has zero external importers — both uses are internal (badge.js:17 anon, :85 all other badges); keep the export. `hideDelay` has **zero passers** anywhere; `transition` is passed only by the 3 toolbar sites; `placement` values in use: default `bottom`, `left` (poll), `top` (toolbar ×3), explicit `bottom` (login ×2, badge default).
+
+### 12.0 Two tooltip populations today (and what actually paints)
+
+The old "popper parity" note flattened a real split. Verified in code (rb `Overlay.js:26` defaults `transition = Fade`; `:99` adds a bare `show` class when `transition` is falsy):
+
+- **Population A — ActionTooltip sites (12).** `transition={transition || false}` ⇒ default **no fade**: classes `tooltip bs-tooltip-<side> show` ⇒ Bootstrap's `.tooltip.show` paints **opacity .9**, appearance is a **snap** (except the 3 toolbar sites, which pass `transition` ⇒ population B). `popperConfig` disables `preventOverflow` (**collisions off**) and the `<Tooltip style={{position:'fixed'}}>` hack rides along — the two were a pair against tooltip jitter in scrolling lists. Delays: `showDelay`/`hideDelay` → rb `delay`, default **0/0**; toolbar passes 500/500/1000. `show={formik?.isSubmitting ? false : undefined}` force-hides during submit unless `notForm` — **fee-button.js:220 is the only formik-aware site** (every other consumer passes `notForm`).
+- **Population B — badge.js + login.js (3 sites, + toolbar's 3 via `transition`).** No `transition` prop ⇒ rb default `Fade` ⇒ classes `fade tooltip … show` ⇒ SN's `.fade.tooltip` (globals.scss:1064) paints **opacity 1** + `fadeIn 0.15s ease-in` (SN wrote that animation because `$enable-transitions: false` compiled Bootstrap's `.fade` transition away). **No `popperConfig`** ⇒ popper's `preventOverflow`+`flip` are **ON** — these tooltips avoid viewport edges today; population A's don't.
+- **Shared chrome** (compiled BS 5.3 + globals.scss:1046–1077 overrides; ~~scss claims~~ → painted values per pre-flight 1, 2026-07-07): bg `#5c8001` (`$tooltip-bg`, globals:85 — theme-invariant, no dark override), text `#fff`, font-size **13.02px** (NOT `.875rem`/14px — it's Bootstrap's `$tooltip-font-size: $font-size-sm` = SN's `.93rem` base × .875 = `.81375rem`; the old note quoted the sass formula, the compile bakes the small base in), `.tooltip-inner` padding `.2rem .45rem` (3.2/7.2px ✓) + `line-height: 1` (✓ computes 13.02px), `max-width: 200px` ✓, `text-align: center` ✓, `word-wrap: break-word` ✓, border-radius `.4rem` (6.4px ✓), arrow `.8rem × .4rem` (12.8×6.4px ✓) green triangle, `z-index: 1080` ✓ (≡ `--sn-z-tooltip`). Touch: `@media (hover:none),(hover:on-demand) { .tooltip { visibility: hidden } }` — **touch-disabled for population A ONLY**: `.fade.tooltip { visibility: visible }` (globals:1064) is specificity (0,2,0) vs the media rule's (0,1,0), so **population B tooltips DO open on tap today** (mobile synthesizes hover; confirmed empirically under emulated `hover:none` — badge tooltip computed `visibility: visible`). The old "by design" claim held only for A.
+
+**Pre-flight checks (painted output, not scss — the §11.7 lesson) — ✅ all four run 2026-07-07** (headless system Chrome via playwright-core against the dev server; scratch page `pages/dev/tooltip-preflight.js` mounts both rb populations + a bare Base UI tooltip — **delete it when C3 lands**; scripts in session scratchpad):
+1. ✅ **Split confirmed exactly.** A (front-page upvote bolt in situ + scratch): classes `show tooltip bs-tooltip-bottom`, `animation: none`, opacity `.9` from first frame (snap). B (badge): classes `fade show tooltip bs-tooltip-bottom`, `animation: 0.15s ease-in fadeIn`, opacity ramps 0→.07→.30→1. `.tooltip-inner` computed: padding/radius/max-width all as quoted (3.2×7.2px / 6.4px / 200px) but **font-size 13.02px, not 14px** — shared-chrome bullet corrected above; `text-sm` (14px) remains the nearest native step (|14−13.02| = .98 < |13.02−12| = 1.02), it's just not "exact". **Bonus finding**: the `position:fixed` hack is **inert today** — computed `position: absolute` on live tooltips (popper's applyStyles overwrites the React inline style), so dropping it (§12.2) loses nothing.
+2. ✅ **Gap = 6.0px** (A, front-page bolt) / **6.33px** (B, badge) — §12.0's ≈6.4 prediction holds. Base UI with `sideOffset={6}` painted a 6.33px gap in the same run: **`sideOffset={6}` locked** (open question 3 answered).
+3. ✅ **Docs demo pattern pulled** (base-ui.com/react/components/tooltip.md): `origin-[var(--transform-origin)]`, transition on `[transform, opacity]` **ease-out**, `data-starting-style`/`data-ending-style` at `opacity-0` + **`scale(0.98)`** (not the sketch's .95 — open question 4 answered), `data-instant:transition-none`. Docs use 100ms; keystone 5 pins ours at ~150ms (kept). Docs `sideOffset={11}` is their chunky-shadow design, not a parity input. Docs arrow is an SVG; we keep the CSS diamond (open question 2 rationale stands).
+4. ✅ **No touch leak** (emulated iPhone, `hasTouch` — playwright tap + raw `touchscreen.tap`): Base UI opens **nothing** on tap while hover in the same setup opens fine; no §12.7-3 contingency needed. Real-iOS pass stays on sox's §12.6 QA list. ⚠️ **But see the corrected shared-chrome bullet**: today a tap DOES open population B tooltips (badge streak counts etc.) — under Base UI, mobile loses that. Evidence filed as open question 5.
+
+*(Verified during spec, no re-check needed: `TooltipTrigger.js:129` resolves open delay as `delay ?? providerDelay ?? 600` — a `Provider delay={0}` gives OverlayTrigger parity without per-site props; `closeDelay` same shape with default 0. `Tooltip.Root` has `disabled`; collisions turn off via `collisionAvoidance={{ side: 'none', align: 'none', fallbackAxisSide: 'none' }}`; `TooltipPositioner`'s own `side` default is `'top'` — our wrapper must default `'bottom'`.)*
+
+### 12.1 `ui/tooltip.js` + `tooltip.module.css` (+ Provider in `_app.js`)
+
+File-placement rule satisfied: 3 consumer files (action-tooltip.js internals, badge.js, login.js). Recipe per keystone 6 — layout/typography as utilities, chrome/motion in the module via `var(--sn-*)`:
+
+```jsx
+import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
+import { cn } from '@/lib/cn'
+import styles from './tooltip.module.css'
+
+// popper parity (§12.0): preferred side is kept even when it overflows
+const COLLISIONS_OFF = { side: 'none', align: 'none', fallbackAxisSide: 'none' }
+
+// _app.js mounts this once: delay 0/0 = OverlayTrigger parity (Base UI's
+// Trigger default is 600ms); grouping timeout keeps its 400ms native default
+export function TooltipProvider ({ children }) {
+  return <BaseTooltip.Provider delay={0} closeDelay={0}>{children}</BaseTooltip.Provider>
+}
+
+/**
+ * SN Tooltip — children must be a single element that spreads props and
+ * forwards ref (DOM tags qualify); it stays in place, only the popup portals
+ */
+export default function Tooltip ({ children, content, side = 'bottom', delay, closeDelay, disabled, className }) {
+  if (!content) return children
+  return (
+    <BaseTooltip.Root disabled={disabled}>
+      <BaseTooltip.Trigger render={children} delay={delay} closeDelay={closeDelay} />
+      <BaseTooltip.Portal>
+        <BaseTooltip.Positioner side={side} sideOffset={6} collisionAvoidance={COLLISIONS_OFF} className={styles.positioner}>
+          <BaseTooltip.Popup className={cn(styles.popup, 'px-2 py-1 text-sm leading-none text-center wrap-break-word max-w-48 rounded-md', className)}>
+            <BaseTooltip.Arrow className={styles.arrow} />
+            {content}
+          </BaseTooltip.Popup>
+        </BaseTooltip.Positioner>
+      </BaseTooltip.Portal>
+    </BaseTooltip.Root>
+  )
+}
+```
+
+Utility values, nearest-native per C2.5 (no brackets): padding `.2rem/.45rem` → `py-1 px-2` (`.25/.5rem` — also exactly Bootstrap's own stock tooltip padding; SN's override was a hand-nudge below stock), font 13.02px painted (see pre-flight 1) → `text-sm` (14px — **nearest step, not exact**; ~1px up), `line-height: 1` → `leading-none`, `max-width: 200px` → `max-w-48` (192px), radius `.4rem` → `rounded-md` (the C2.5 codemod value for BS `rounded`), `word-wrap: break-word` → `wrap-break-word` (TW 4.1 canonical; `break-words` is the v3 alias), `text-align: center` → `text-center`. Colors stay module-side per §11.0 discipline (no `bg-*`/`text-<color>` in the recipe string).
+
+```css
+/* tooltip.module.css */
+.positioner {
+  z-index: var(--sn-z-tooltip);   /* portals to <body>; ladder is the only z authority */
+}
+
+.popup {
+  --sn-tooltip-bg: #5c8001;       /* $tooltip-bg (globals:85); theme-invariant today — no dark block */
+  background-color: var(--sn-tooltip-bg);
+  color: #fff;
+  transform-origin: var(--transform-origin);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;   /* keystone 5, first application */
+}
+
+.popup[data-starting-style],
+.popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);         /* Base UI docs demo value (pre-flight 3, 2026-07-07) */
+}
+
+.popup[data-instant] {
+  transition: none;               /* provider grouping / dismiss / focus opens skip the animation */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup {
+    transition: none;
+  }
+}
+
+/* diamond arrow: rotated square, half-protruding; shares the bg var.
+   8px ⇒ 4px protrusion ≈ today's .4rem triangle; data-side = popup side,
+   so side='bottom' puts the arrow on the popup's TOP edge */
+.arrow {
+  width: 8px;
+  height: 8px;
+  background-color: var(--sn-tooltip-bg);
+  transform: rotate(45deg);
+}
+.arrow[data-side='top'] { bottom: -4px; }
+.arrow[data-side='bottom'] { top: -4px; }
+.arrow[data-side='left'] { right: -4px; }
+.arrow[data-side='right'] { left: -4px; }
+```
+
+`_app.js`: `import { TooltipProvider } from '@/components/ui/tooltip'`, wrap once directly inside the outer `<ErrorBoundary>` (line 121 — context-only, renders no DOM, any depth works; outermost keeps the diff one-line). This closes C0's standing decision "`Tooltip.Provider` lands in C3".
+
+Intended native deltas (all three are Base UI defaults we deliberately keep — list them in the PR description):
+- **Uniform opacity 1** — population A gains the `.1` Bootstrap dimmed it by; SN already chose `1` for population B.
+- **Population A gains the ~150ms fade** (keystone 5) — it snaps today; population B's 0.15s ease-in becomes 150ms ease-out.
+- **Provider grouping**: once one tooltip is open, moving to an adjacent trigger swaps instantly (`data-instant`, 400ms window) — footer's three toggles and the toolbar row benefit; rb had no equivalent. `timeout={0}` on the Provider kills it if QA dislikes it.
+- **Focus opens on focus-visible only** — a mouse-click's focus no longer summons the tooltip (rb showed on any focus); keyboard Tab still does. Strictly better, same family as D8.
+- **Hoverable popup** (WCAG 1.4.13): moving the pointer onto the tooltip keeps it open; rb closed it. Keep the default (`disableHoverablePopup` unset).
+
+### 12.2 `action-tooltip.js` internals (public API frozen)
+
+```jsx
+import { useFormikContext } from 'formik'
+import Tooltip from '@/components/ui/tooltip'
+
+export default function ActionTooltip ({ children, notForm, disable, overlayText, placement, noWrapper, showDelay, hideDelay, transition }) {
+  // if we're in a form, we want to hide tooltip on submit
+  let formik
+  if (!notForm) {
+    formik = useFormikContext()
+  }
+  if (disable || !overlayText) {
+    return children
+  }
+  return (
+    <Tooltip
+      content={overlayText}
+      side={placement || 'bottom'}
+      delay={showDelay}
+      closeDelay={hideDelay}
+      disabled={formik?.isSubmitting}
+    >
+      {noWrapper ? children : <span>{children}</span>}
+    </Tooltip>
+  )
+}
+```
+
+- The early returns and the conditional `useFormikContext` stay **verbatim** — the hook-in-a-conditional is a pre-existing rules-of-hooks violation; C3 does not fix it (behavior risk + diff noise; `notForm` is constant per site so it never actually misfires).
+- `show={isSubmitting ? false : undefined}` → `Root disabled` — flipping `disabled` true closes an open tooltip (change reason `'disabled'` exists in 1.6.0's `TooltipRoot.ChangeEventReason`). QA-verify on fee-button.
+- `transition` becomes a **no-op** (keystone 5: everything animates now) — keep it in the signature so the 3 toolbar call sites don't error; C8b drops it from them. `hideDelay` likewise stays accepted (zero passers today).
+- `position: fixed` hack + `popperConfig` die with the rb elements — portal-to-body + floating-ui auto-update is the native cure for the jitter they patched. (Pre-flight 1 bonus: the hack is already **inert** — popper's applyStyles overwrites the inline `position` to `absolute` at runtime, verified on live tooltips — so dropping it can't change anything.)
+
+### 12.3 Direct sites — badge.js + login.js
+
+- **badge.js**: `BadgeTooltip` body becomes `<Tooltip content={overlayText} side={placement || 'bottom'}>{children}</Tooltip>`; export kept. Both internal uses already pass a single `<span>` wrapper element ⇒ valid `render` targets. Drop the two rb import lines. *(Reminder from §11: `components/badge.js` ≠ `components/ui/badge.js`.)*
+- **login.js** ×2 (:135, :167): today's `overlay={multiAuth ? <Tooltip>…</Tooltip> : <></>}` becomes `<Tooltip content='not available for account switching yet' disabled={!multiAuth}>` around the same `<div className='w-full'>` children (`key={provider.id}` moves onto our Tooltip — it's a component key, fine). `placement='bottom'` was explicit = our default, drop it. Import line 11 (`{ OverlayTrigger, Tooltip }` barrel) dies — nothing else rides it.
+
+### 12.4 The fadeIn keyframe — keystone 5 reconciliation
+
+The old C3 gate ("fadeIn = only surviving popup animation") predates the 2026-07-06 keystone 5 rewrite and is **superseded**: tooltip motion is now the module's `data-starting-style`/`data-ending-style` transition, and **no fadeIn keyframe moves into tooltip.module.css** (§3's old tree comment fixed accordingly). Census of the globals keyframe (2026-07-07): `@keyframes fadeIn` (globals:1070) has exactly two referencing rules — `.fade.tooltip` (:1064, dies with the rb tooltip DOM) and `.spin.fade-in` (:1060, **already dead**: every JSX `spin` pairs with `fill-*`, none with `fade-in`). So after C3 the keyframe has zero live consumers. **C3 deletes nothing in globals.scss** (C2 precedent: deletions are PR3's, grep-gated) — the whole block is queued in §12.8. text.scss:294 declares its own identical `fadeIn` (media fade-in) — keyframes share a global runtime namespace, but the two bodies are identical so today's shadowing is harmless, and text.scss's copy stands alone once globals' dies.
+
+### 12.5 Open questions (for spec review)
+
+1. **Collisions.** The locked decision says off (popper parity) and the sketch implements it — but §12.0 shows parity is two-faced: badge/login tooltips **do** collision-avoid today, and badges render next to usernames that can hug the right viewport edge on mobile. If QA shows clipped badge tooltips, the native fix is deleting `collisionAvoidance={COLLISIONS_OFF}` (Base UI's default flip+shift ≈ population B's today-behavior). Recommendation: land as locked, decide at QA with the evidence.
+2. **Arrow.** Keep it (green bubble + arrow is SN identity); diamond technique over the docs' SVG (pure CSS, shares `--sn-tooltip-bg`, no path to maintain). Confirm at review.
+3. ~~**`sideOffset={6}`** pending pre-flight 2's measurement~~ ✅ answered 2026-07-07: today's painted gap is 6.0px (A) / 6.33px (B); Base UI at `sideOffset={6}` paints 6.33px — locked at 6.
+4. ~~**Scale value** in starting/ending styles pending pre-flight 3~~ ✅ answered 2026-07-07: docs demo uses `scale(0.98)` — landed in tooltip.module.css.
+5. **Mobile badge tooltips (new, from pre-flight 4).** Today population B opens on tap (`.fade.tooltip`'s `visibility: visible` out-specifies the touch-hiding media rule — see §12.0) — that's how phone users read cowboy-streak day counts. Base UI opens nothing on tap (verified), so C3 as spec'd **removes that access**; population A loses nothing (already hidden on touch). Same decision shape as question 1: land as spec'd, show sox on-device at QA. If mobile access must stay, the native answer is a different primitive for badges (Base UI's own docs point tap-visible hints at Popover — a C4 concern), not a tooltip hack.
+
+### 12.6 Gates & QA
+
+Mechanical gates:
+- `grep -rn "react-bootstrap/Tooltip" components pages wallets lib` → **0**; `grep -rn "from 'react-bootstrap'" components pages wallets lib | grep -E "Tooltip|OverlayTrigger"` → **0** (playground exemption as always).
+- `grep -rln "OverlayTrigger" components pages wallets lib` → **exactly** `footer.js` + `hoverable-popover.js` (C4's residue; C11's zero-grep is the final backstop).
+- `npx standard` clean on the touched files: `components/ui/tooltip.js` (new), `components/action-tooltip.js`, `components/badge.js`, `components/login.js`, `pages/_app.js`.
+- No `@theme`/token changes ⇒ no compiled-CSS gate this commit.
+
+Visual/interaction QA (light + dark where it matters — the green is theme-invariant):
+- **Upvote bolt**: bubble below, arrow, `numWithUnits` text, ~150ms fade in **and** out; scroll a long item list mid-hover — no jitter/detach (the dead `position:fixed` hack's job, now native).
+- **Fee button** inside a post form: tooltip shows fee text; **hides the moment submit starts** (formik gate via `disabled`); works again after.
+- **Poll** '1 sat' opens `left`; **comment/item bounty** chips show "… paid".
+- **Footer toggles** ×3 (dark mode / lightning animations / live comments): correct text per state; sweep the pointer across all three — adjacent opens are instant (grouping, intended).
+- **Toolbar (interim, pre-C8b)**: 500ms delay, opens `top`; tooltip suppressed while its dropdown is open (`disable` → early return); show/hide-toolbar toggle at 1000ms; **the rb `Dropdown` child still opens/closes** (risk 1).
+- **Badges**: anon spy, cowboy streak (day count), horse/gun/bot, wallet badges; hover one near the right viewport edge at ~375px — observe the collisions-off behavior and feed open question 1.
+- **Login** (account-switching flow, `multiAuth`): tooltip on the email form + non-lightning providers only there; plain `/login` shows none.
+- **Keyboard**: Tab to a trigger → tooltip on focus-visible; Escape closes. Mouse-click focus shows nothing (intended delta). *(Only sites whose trigger child is naturally focusable qualify — toolbar buttons; badge `<span>`s / login `<div>`s aren't keyboard-reachable today either (rb spans never focused), so no regression there — verified in pre-flight: a bare-span Base UI trigger is skipped by Tab.)*
+- **Touch** (emulation + one real iOS pass): tap opens no tooltip anywhere (pre-flight 4's runtime confirmation).
+- **`prefers-reduced-motion: reduce`**: instant show/hide, everything else identical.
+
+### 12.7 C3-specific risks
+
+1. **Toolbar's trigger child is an rb `Dropdown`** (`as='span'`) until C8b — `Trigger render={children}` must merge props+ref through react-bootstrap's forwardRef chain. Today's `cloneElement` path has the same requirements, so it should hold, but this is the one interim state to test explicitly before calling C3 done. Fallback: ActionTooltip wraps `noWrapper` children in `<span className='contents'>` temporarily (layout-inert), removed at C8b.
+2. **Trigger's 600ms default delay** — mitigated by the Provider cascade (verified, §12.0); the wrapper must never rely on Trigger defaults. If a tooltip ever renders outside the Provider (tests, storybook-ish pages), it silently gains 600ms — keep the Provider at the app root, period.
+3. **Touch leak** — if pre-flight 4 shows Base UI opening on tap-focus anywhere, contingency: `@media (hover: none), (hover: on-demand) { .positioner { display: none } }` in the module (same shape as today's globals rule, scoped to us). Only add it on evidence.
+4. **Provider grouping surprises** — the 400ms instant-swap window is new behavior on the footer row; if it reads as glitchy, `timeout={0}` disables grouping without touching sites.
+5. **`disabled` flip mid-hover** (fee-button submit) — spec assumes it closes an open tooltip; the reasons enum says yes, QA confirms.
+6. **Conditional hook stays** (§12.2) — resist the urge to "fix" it in this diff.
+
+### 12.8 PR3 handoff notes
+
+- globals.scss deletions **unlocked by C3** (PR3 executes, each gated on its grep): `.tooltip-inner` (:1054), `.fade.tooltip` (:1064), the `@media (hover:none),(hover:on-demand) .tooltip` block (:1046), `@keyframes fadeIn` (:1070), and the already-dead `.spin.fade-in` (:1060). text.scss keeps its own `fadeIn` (unrelated, media loading).
+- `$tooltip-bg` (globals.scss:85) then feeds only Bootstrap's dead tooltip compile → drop with PR3's Bootstrap sweep; the value's live home is `--sn-tooltip-bg` in tooltip.module.css.
+- tooltip.module.css consumes **zero `--bs-*` vars** (unlike badge) — nothing for §11.11's var sweep; it reads only `--sn-z-tooltip`, `--sn-tooltip-bg` (self-declared), and Base UI's runtime `--transform-origin`.
+- Master plan §PR3 keeps "animations/keyframes" as app.css survivors — annotate there that globals' `fadeIn` is an exception (deletable post-C3, census above).

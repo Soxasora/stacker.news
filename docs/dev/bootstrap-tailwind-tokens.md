@@ -5,6 +5,18 @@ the `bs-tw-map.js` codemod). That doc has the *decisions*; this doc has the *der
 value below was checked against this project's actual compiled CSS, not generic Bootstrap
 defaults, because SN overrides `$font-size-base` and a few other variables that shift the scale.
 
+> **Status (2026-07-06): historical reference.** The native-first strategy revision dropped
+> value-exact parity — the live map (`scripts/codemods/bs-tw-map.js`) now emits nearest-native
+> classes (`text-base`/`text-lg`, `rounded-md`, `font-mono`…), and the one deliberate type token
+> is `--text-base: .93rem` in `styles/tailwind.css`. Use this doc to judge what "nearest" means,
+> not as a target. In particular, the font-size section's "always use arbitrary brackets"
+> guidance and the `leading-[1.2]` heading advice are superseded.
+>
+> **Second life (2026-07-07):** promoted to a census input for the master plan's **PR4 — SN
+> identity reconciliation** — the post-parity pass that reviews every Bootstrap-era custom value
+> and ports the keepers as `@theme` tokens. The derivation tables below are the record of what
+> Bootstrap actually painted; don't delete this doc when PR3 removes the sass toolchain.
+
 **How these numbers were produced:** compiled `styles/globals.scss` directly with the `sass` JS
 API (`sass.compile('styles/globals.scss', { loadPaths: ['node_modules'] })`) and read the
 generated rules for `.m-*`/`.p-*`/`.gap-*`, `.fs-*`, and `h1`–`h6`. `$spacer` is untouched
