@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Popover } from '@base-ui/react/popover'
-import FormControl from 'react-bootstrap/FormControl'
+import { FormControl } from '@/components/form/field'
 import TocIcon from '@/svgs/list-unordered.svg'
 import { useRouter } from 'next/router'
 import { $extractHeadingsFromRoot } from '@/lib/lexical/utils/toc'

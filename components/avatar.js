@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import AvatarEditor from 'react-avatar-editor'
 import Button from '@/components/ui/button'
-import BootstrapForm from 'react-bootstrap/Form'
 import EditImage from '@/svgs/image-edit-fill.svg'
 import Moon from '@/svgs/moon-fill.svg'
 import { useShowModal } from './modal'
@@ -35,13 +34,14 @@ export default function Avatar ({ onSuccess }) {
             height: 'auto'
           }}
         />
-        <BootstrapForm.Group controlId='formBasicRange'>
-          <BootstrapForm.Range
+        <div className='mb-4'>
+          <input
+            type='range' className='form-range'
             onChange={e => setScale(parseFloat(e.target.value))}
             min={1} max={2} step='0.05'
             // defaultValue={scale}
           />
-        </BootstrapForm.Group>
+        </div>
         <Button
           onClick={async () => {
             const rect = ref.current.getCroppingRect()

@@ -1,4 +1,4 @@
-import { Checkbox, Input } from '@/components/form'
+import { Checkbox, Input, InputGroup } from '@/components/form'
 import { useMe } from '@/components/me'
 import { characterLength } from '@/lib/validate'
 import { lnAddrFormFields } from '@/lib/lnurl'
@@ -9,7 +9,6 @@ import CloseIcon from '@/svgs/close-line.svg'
 import classNames from 'classnames'
 import { useFormikContext } from 'formik'
 import { useCallback, useMemo, useState } from 'react'
-import { InputGroup } from 'react-bootstrap'
 const styles = { ...sharedStyles, ...sendStyles }
 
 export function LightningAddressFields ({ service, maxFee }) {

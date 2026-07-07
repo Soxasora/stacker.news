@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { useField } from 'formik'
 import { useMemo, useRef } from 'react'
-import BootstrapForm from 'react-bootstrap/Form'
+import { FormText } from '@/components/form/field'
 import { configExtension, defineExtension, $getRoot, $createParagraphNode } from 'lexical'
 import { ReactExtension } from '@lexical/react/ReactExtension'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -187,8 +187,8 @@ function EditorContent ({
         </>
       )}
       {isMarkdown && <TransformerBridgePlugin />}
-      {hint && <BootstrapForm.Text>{hint}</BootstrapForm.Text>}
-      {warn && <BootstrapForm.Text className='text-warning'>{warn}</BootstrapForm.Text>}
+      {hint && <FormText>{hint}</FormText>}
+      {warn && <FormText className='text-warning'>{warn}</FormText>}
     </div>
   )
 }

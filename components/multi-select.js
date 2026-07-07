@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import BootstrapForm from 'react-bootstrap/Form'
+import { FormGroup, Feedback, FormText } from '@/components/form/field'
 import { useFormikContext, useField } from 'formik'
 import ReactSelect, { components as ReactSelectComponents } from 'react-select'
 import ArrowDownSFill from '@/svgs/arrow-down-s-fill.svg'
@@ -7,15 +7,6 @@ import CloseIcon from '@/svgs/close-line.svg'
 import Info from './info'
 import styles from './multi-select.module.css'
 import classNames from 'classnames'
-
-function FormGroup ({ className, label, children }) {
-  return (
-    <BootstrapForm.Group className={`form-group ${className}`}>
-      {label && <BootstrapForm.Label>{label}</BootstrapForm.Label>}
-      {children}
-    </BootstrapForm.Group>
-  )
-}
 
 const DropdownIndicator = (props) => {
   const { selectProps } = props
@@ -131,13 +122,13 @@ export function MultiSelect ({ label, items, size = 'lg', info, groupClassName, 
         />
         {info && <Info>{info}</Info>}
       </span>
-      <BootstrapForm.Control.Feedback type='invalid' className={meta.touched && meta.error ? 'block' : ''}>
+      <Feedback show={!!(meta.touched && meta.error)} className='block'>
         {meta.touched && meta.error}
-      </BootstrapForm.Control.Feedback>
+      </Feedback>
       {hint &&
-        <BootstrapForm.Text>
+        <FormText>
           {hint}
-        </BootstrapForm.Text>}
+        </FormText>}
     </FormGroup>
   )
 }

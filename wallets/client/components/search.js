@@ -1,4 +1,4 @@
-import { Form } from 'react-bootstrap'
+import { FormControl } from '@/components/form/field'
 
 function searchKey (value) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -34,7 +34,7 @@ export function WalletSearch ({ query, onQueryChange }) {
     <div className='flex justify-center mb-6 mt-6'>
       <div className='w-full' style={{ maxWidth: '400px' }}>
         <div className='relative'>
-          <Form.Control
+          <FormControl
             type='text'
             placeholder='Search wallets...'
             value={query}

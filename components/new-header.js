@@ -1,5 +1,5 @@
 import { ITEM_TYPES, ITEM_TYPES_UNIVERSAL } from '@/lib/constants'
-import BootstrapForm from 'react-bootstrap/Form'
+import checkStyles from '@/components/form/controls.module.css'
 import { Select } from './form'
 import { useRouter } from 'next/router'
 import { usePrefix } from './territory-domains'
@@ -17,12 +17,16 @@ function ActiveBountiesCheckbox ({ prefix }) {
 
   return (
     <div className='mx-2 mb-2'>
-      <BootstrapForm.Check
-        inline
-        checked={router.query.active === 'true'}
-        label='active only'
-        onChange={onChange}
-      />
+      <div className={`${checkStyles.check} ${checkStyles.checkInline}`}>
+        <input
+          id='bounties-active-only'
+          type='checkbox'
+          className={checkStyles.checkInput}
+          checked={router.query.active === 'true'}
+          onChange={onChange}
+        />
+        <label htmlFor='bounties-active-only'>active only</label>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Form, Input, SubmitButton } from './form'
+import { Form, FormLabel, Input, SubmitButton } from './form'
 import { subBrandingSchema } from '@/lib/validate'
 import { truncateDesc } from '@/lib/domains/seo'
 import { useField, useFormikContext } from 'formik'
@@ -51,7 +51,7 @@ function AssetField ({ label, name, subName, hint, defaultAsset, brand, width = 
 
   return (
     <div className='mb-4'>
-      <label className='form-label'>{label}</label>
+      <FormLabel>{label}</FormLabel>
       <div className='flex items-end gap-4'>
         <div className={styles.preview}>
           {previewUrl

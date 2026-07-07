@@ -1,5 +1,5 @@
-import Button from 'react-bootstrap/Button'
-import InputGroup from 'react-bootstrap/InputGroup'
+import Button from '@/components/ui/button'
+import { InputGroup } from '@/components/form'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useApolloClient } from '@apollo/client/react'
 import { Form, Input, SubmitButton } from './form'

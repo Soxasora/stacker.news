@@ -1,0 +1,190 @@
+/* SN form-control paint (C9a) — Bootstrap base + the globals.scss overrides,
+   under local names. Box metrics (padding/font/radius) ride the recipes in
+   field.js per keystone 6; states/colors live here.
+   PR3 handoff: consumes --theme-inputBg/-inputDisabledBg/-borderColor/
+   -clickToContextColor/-dropdownItemColor, --bs-body-color, --bs-border-color,
+   --bs-primary. */
+
+.control {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  font-weight: 400;
+  appearance: none;
+  background-clip: padding-box;
+  background-color: var(--theme-inputBg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--theme-borderColor);
+  outline: 0;
+}
+
+.control::placeholder {
+  color: #6c757d;   /* $input-placeholder-color */
+  opacity: 1;
+}
+
+.control:focus {
+  background-color: var(--theme-inputBg);
+  color: var(--bs-body-color);
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgb(250 218 94 / 25%);
+}
+
+.control:disabled,
+.control[readonly] {
+  background-color: var(--theme-inputDisabledBg);
+  border-color: var(--theme-borderColor);
+  color: var(--theme-borderColor);
+  opacity: 1;
+}
+
+textarea.control {
+  line-height: 1rem;   /* globals: textarea.form-control */
+}
+
+.control.invalid {
+  border-color: #c03221;
+}
+
+.control.invalid:focus {
+  box-shadow: 0 0 0 0.2rem rgba(192, 50, 33, .25);
+}
+
+.control.valid {
+  border-color: #5c8001;
+}
+
+/* globals: .form-label .text-muted stays normal-weight inside the bold label */
+.label :global(.text-muted) {
+  font-weight: normal;
+}
+
+/* input group — flex composition; corner-joining classes are injected by
+   input-group.js onto the children (module radius rules can't beat the
+   recipes' layered-important radius utilities — PR2 risk 7) */
+.inputGroup {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+.inputGroup > .control {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  min-width: 0;
+}
+
+.groupText {
+  display: flex;
+  align-items: center;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  background-color: var(--theme-clickToContextColor);
+  border: 1px solid var(--theme-borderColor);
+  color: var(--bs-body-color);
+}
+
+/* checks — native inputs styled to the compiled .form-check-* spec (§6.10a);
+   the check/dot glyphs are black per SN's $form-check-input-checked-color */
+.check {
+  display: block;
+  min-height: 1.395rem;
+  padding-left: 1.5em;
+  margin-bottom: .125rem;
+}
+
+.check input {
+  float: left;
+  margin-left: -1.5em;
+}
+
+.checkInline {
+  display: inline-block;
+  margin-right: 1rem;
+}
+
+.checkInput {
+  width: 1em;
+  height: 1em;
+  margin-top: .25em;
+  vertical-align: top;
+  appearance: none;
+  background-color: var(--theme-inputBg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  border: 1px solid var(--bs-border-color);
+  print-color-adjust: exact;
+}
+
+.checkInput[type='checkbox'] {
+  border-radius: .25em;
+}
+
+.checkInput[type='radio'] {
+  border-radius: 50%;
+}
+
+.checkInput:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgb(250 218 94 / 25%);
+}
+
+.checkInput:checked {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.checkInput[type='checkbox']:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3E%3C/svg%3E");
+}
+
+.checkInput[type='radio']:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3E%3Ccircle r='2' fill='%23000'/%3E%3C/svg%3E");
+}
+
+.checkInput:disabled {
+  pointer-events: none;
+  opacity: .5;
+}
+
+.checkInput.invalid {
+  border-color: #c03221;
+}
+
+/* the whole select block is a deliberate SN one-off, kept verbatim from
+   globals.scss select.form-select (hand-crafted identity, keystone 6d
+   exception) + Bootstrap's compiled indicator arrow */
+.select {
+  background-color: var(--theme-clickToContextColor);
+  color: var(--theme-dropdownItemColor);
+  font-weight: bold;
+  border: none;
+  display: inline-block;
+  width: 100%;
+  height: calc(1.5em + 0.5rem + 2px);
+  padding: 0.25rem 1.84rem 0.25rem 0.5rem;
+  font-size: .7875rem;
+  vertical-align: middle;
+  border-radius: 0.4rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg fill='%23808080' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 15.0006L7.75732 10.758L9.17154 9.34375L12 12.1722L14.8284 9.34375L16.2426 10.758L12 15.0006Z'%3E%3C/path%3E%3C/svg%3E%0A");
+  background-repeat: no-repeat;
+  background-position: right .25rem center;
+  background-size: 1.5rem;
+}
+
+.select option {
+  /* fix dropdown items not visible in darkmode on some browsers */
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.select:focus {
+  border-color: none;
+  box-shadow: none;
+  outline: none;
+}

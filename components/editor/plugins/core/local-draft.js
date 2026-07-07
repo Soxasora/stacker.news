@@ -1,6 +1,6 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useContext, useCallback, useEffect } from 'react'
-import { StorageKeyPrefixContext } from '@/components/form'
+import { StorageKeyPrefixContext } from '@/components/form/form'
 import { $setText } from '@/lib/lexical/utils'
 import { $markdownToLexical } from '@/lib/lexical/utils/mdast'
 import { isMarkdownMode } from '@/lib/lexical/commands/utils'

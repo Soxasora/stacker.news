@@ -1,4 +1,4 @@
-import { Input } from '@/components/form'
+import { Feedback, Input } from '@/components/form'
 import { MiddleEllipsis } from '@/components/copy-chip'
 import { bolt11Description } from '@/lib/bolt11'
 import sharedStyles from '@/wallets/client/components/wallet.module.css'
@@ -100,7 +100,7 @@ function DetectedDestinationRow ({ value, error, onReplace }) {
           replace
         </button>
       </div>
-      {error && <div className='invalid-feedback block'>{error}</div>}
+      {error && <Feedback className='block'>{error}</Feedback>}
     </>
   )
 }
