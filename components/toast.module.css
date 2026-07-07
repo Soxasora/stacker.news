@@ -37,6 +37,13 @@
   }
 }
 
+/* globals .toast-body: .75rem 1.25rem — module-side because py-3/px-5 read
+   as Bootstrap-era spacing names to bs-utility-check */
+.body {
+  padding: 0.75rem 1.25rem;
+  word-wrap: break-word;
+}
+
 /* backgrounds were rb's bg-* utilities; the progressBar rules further down
    re-declare their own bg and win by specificity, exactly as before */
 .success {

@@ -392,14 +392,14 @@ export function Sorts ({ prefix, className }) {
   )
 }
 
-export function PostItem ({ className, prefix }) {
+export function PostItem ({ className, prefix, size }) {
   const branding = useBranding()
   const isLurker = useIsLurker()
   // when a custom primary color is set we let the button text follow the skin's
   // --sn-btn-color (YIQ-computed --sn-primary-text); otherwise force text-black
   const textOverride = branding?.primaryColor ? '' : 'text-black'
   return (
-    <Link href={prefix + '/post'} className={buttonClasses({ variant: isLurker ? 'grey' : 'primary', className: [className, textOverride, 'md:py-1'] })}>
+    <Link href={prefix + '/post'} className={buttonClasses({ variant: isLurker ? 'grey' : 'primary', size, className: [className, textOverride, 'md:py-1'] })}>
       post
     </Link>
   )

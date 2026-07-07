@@ -36,7 +36,7 @@ function ToastView ({ toast, onCloseClick, onAutohide }) {
 
   return (
     <div role='status' className={cn(styles.toast, styles[toast.variant], textStyle, 'rounded-md')}>
-      <div className='py-3 px-5 wrap-break-word'>
+      <div className={styles.body}>
         <div className='flex items-center'>
           <div className='grow overflow-hidden'>{toast.body}</div>
           <Button

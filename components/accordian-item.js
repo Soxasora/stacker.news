@@ -1,66 +1,50 @@
-import Accordion from 'react-bootstrap/Accordion'
-import AccordionContext from 'react-bootstrap/AccordionContext'
-import { useAccordionButton } from 'react-bootstrap/AccordionButton'
+import { Collapsible, CollapsiblePanel } from '@/components/ui/collapsible'
 import ArrowRight from '@/svgs/arrow-right-s-fill.svg'
 import ArrowDown from '@/svgs/arrow-down-s-fill.svg'
-import { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import classNames from 'classnames'
-
-const KEY_ID = '0'
-
-function ContextAwareToggle ({ children, headerColor = 'var(--theme-grey)', eventKey, show }) {
-  const { activeEventKey } = useContext(AccordionContext)
-  const decoratedOnClick = useAccordionButton(eventKey)
-
-  useEffect(() => {
-    // if we want to show the accordian and it's not open, open it
-    if (show && activeEventKey !== eventKey) {
-      decoratedOnClick()
-    }
-  }, [show])
-
-  const isCurrentEventKey = activeEventKey === eventKey
-
-  return (
-    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={decoratedOnClick}>
-      {isCurrentEventKey
-        ? <ArrowDown style={{ fill: headerColor }} height={20} width={20} />
-        : <ArrowRight style={{ fill: headerColor }} height={20} width={20} />}
-      {children}
-    </div>
-  )
-}
+import { cn } from '@/lib/cn'
+import styles from './accordian-item.module.css'
 
 export default function AccordianItem ({ header, body, className, headerColor = 'var(--theme-grey)', show }) {
-  const [activeKey, setActiveKey] = useState()
+  const [open, setOpen] = useState(!!show)
 
   useEffect(() => {
-    setActiveKey(show ? KEY_ID : null)
+    // follow `show` in both directions, like the old double effect did
+    setOpen(!!show)
   }, [show])
 
-  const handleOnSelect = () => {
-    setActiveKey(activeKey === KEY_ID ? null : KEY_ID)
-  }
-
   return (
-    <Accordion defaultActiveKey={activeKey} activeKey={activeKey} onSelect={handleOnSelect}>
-      <ContextAwareToggle show={show} eventKey={KEY_ID} headerColor={headerColor}><div style={{ color: headerColor }}>{header}</div></ContextAwareToggle>
-      <Accordion.Collapse eventKey={KEY_ID} className={classNames('mt-2', className)}>
-        <div key={activeKey}>{body}</div>
-      </Accordion.Collapse>
-    </Accordion>
+    <Collapsible.Root open={open} onOpenChange={setOpen}>
+      <Collapsible.Trigger
+        render={<div role='button' tabIndex={0} />}
+        nativeButton={false}
+        className='pointer flex items-center'
+      >
+        {open
+          ? <ArrowDown style={{ fill: headerColor }} height={20} width={20} />
+          : <ArrowRight style={{ fill: headerColor }} height={20} width={20} />}
+        <div style={{ color: headerColor }}>{header}</div>
+      </Collapsible.Trigger>
+      <CollapsiblePanel className={classNames('mt-2', className)}>
+        {/* keyed remount on toggle — parity with the old <div key={activeKey}> */}
+        <div key={open}>{body}</div>
+      </CollapsiblePanel>
+    </Collapsible.Root>
   )
 }
 
 export function AccordianCard ({ header, children, show, className }) {
   return (
-    <Accordion defaultActiveKey={show ? '0' : undefined} className={className}>
-      <Accordion.Item eventKey='0'>
-        <Accordion.Header>{header}</Accordion.Header>
-        <Accordion.Body>
+    <Collapsible.Root defaultOpen={!!show} className={cn(styles.card, 'rounded-md', className)}>
+      <Collapsible.Trigger className={styles.cardHeader}>
+        {header}
+      </Collapsible.Trigger>
+      <CollapsiblePanel>
+        <div className={styles.cardBody}>
           {children}
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
+        </div>
+      </CollapsiblePanel>
+    </Collapsible.Root>
   )
 }

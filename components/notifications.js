@@ -548,7 +548,7 @@ function PayInFailed ({ n }) {
         <span className={['FAILED'].includes(payIn.payInState) && !isAutoRetryEligiblePayIn(payIn) ? 'visible' : 'invisible'}>
           <Button
             size='sm' variant='outline-warning'
-            className={classNames('ms-2 border rounded-md py-0', disableRetry && 'pulse')}
+            className={classNames('ms-2 border-1 rounded-md py-0', disableRetry && 'pulse')}
             style={{ '--sn-btn-hover-color': '#fff' }}
             disabled={disableRetry}
             onClick={() => {

@@ -57,7 +57,7 @@ export default function BottomBar ({ sub }) {
           <Nav className={styles.footerNav}>
             <Brand />
             <SearchItem {...props} />
-            <PostItem {...props} className='btn-sm' />
+            <PostItem {...props} size='sm' />
             <NavNotifications />
             <Offcanvas me={me} {...props} />
           </Nav>

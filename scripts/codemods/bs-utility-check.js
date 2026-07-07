@@ -69,6 +69,17 @@ const SPACING_HEURISTIC = /^((m|p)(t|b|s|e|x|y)?|gap)-[35]$/
 // PR2/PR3 component/state classes — informational only
 const COMPONENT_PATTERN = /^(btn|button|nav|navbar|modal|form|dropdown|dropup|badge|alert|toast|popover|tooltip|accordion|offcanvas|carousel|card|input-group|list-group|spinner|table|container|container-fluid|row|col|invalid|valid|is|was-validated|show|fade|active|disabled|collapse|collapsing|close|outline)(-|$)/
 
+// PR2 C11 gate (--components): Bootstrap component classes that MUST be gone
+// from JSX class contexts once the Base UI components land (§4b of the PR2
+// doc) — PR3 deletes the globals blocks that style them. Deliberately
+// narrower than COMPONENT_PATTERN: generic state words (active, show,
+// collapse…) have legitimate non-Bootstrap uses.
+const COMPONENT_BLOCKLIST = /^(btn|btn-[\w-]+|form-control|form-select|form-label|form-check[\w-]*|form-range|form-group|invalid-feedback|valid-feedback|dropdown-item|dropdown-divider|dropdown-toggle|dropdown-menu|nav-link|nav-item|nav-tabs|navbar(-[\w-]+)?|modal-[\w-]+|alert|alert-[\w-]+|btn-close|badge|input-group(-[\w-]+)?|offcanvas(-[\w-]+)?|accordion(-[\w-]+)?|toast(-[\w-]+)?|tooltip|popover|card|card-[\w-]+|list-group(-[\w-]+)?)$/
+
+// the untracked dev comparison page imports Bootstrap originals on purpose;
+// it dies before the PR lands (PR2 doc §11.9)
+const COMPONENT_GATE_EXEMPT = /pages[/\\]dev[/\\]playground\.js$/
+
 function matchesBsPattern (token) {
   return BS_PATTERNS.some(re => re.test(token))
 }
@@ -119,6 +130,7 @@ function lineOf (code, offset) {
 function main () {
   const args = process.argv.slice(2)
   const inventory = args.includes('--inventory')
+  const componentsGate = args.includes('--components')
   const dirs = args.filter(a => !a.startsWith('--'))
   const root = process.cwd() // run from the repo root (or any tree to verify)
   const files = listFiles(dirs.length ? dirs : DEFAULT_DIRS, root)
@@ -131,6 +143,8 @@ function main () {
   for (const file of files) {
     const code = fs.readFileSync(file, 'utf8')
     const rel = path.relative(root, file)
+    // deliberate Bootstrap-vs-SN comparison page; dies before the PR lands
+    if (COMPONENT_GATE_EXEMPT.test(rel)) continue
     let ast
     try {
       ast = parser.parse(code, PARSE_OPTS)
@@ -154,6 +168,8 @@ function main () {
           }
           if (category.startsWith('leftover')) {
             leftovers.push({ rel, line: lineOf(code, chunk.base + tok.start), token: tok.text, category, sweep: 'class-context' })
+          } else if (componentsGate && COMPONENT_BLOCKLIST.test(baseToken(tok.text)) && !COMPONENT_GATE_EXEMPT.test(rel)) {
+            leftovers.push({ rel, line: lineOf(code, chunk.base + tok.start), token: tok.text, category: 'component-blocklist', sweep: 'class-context' })
           } else if (category === 'deferred') {
             deferred.set(tok.text, (deferred.get(tok.text) || 0) + 1)
           }

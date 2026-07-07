@@ -36,7 +36,7 @@ export default function JobForm ({ item, subs }) {
         requireSession
         onSubmit={onSubmit}
       >
-        <div className='form-group'>
+        <div className='mb-4'>
           <FormLabel>logo</FormLabel>
           <div className='relative' style={{ width: 'fit-content' }}>
             <img

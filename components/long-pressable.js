@@ -1,5 +1,4 @@
-import React from 'react'
-import PropType from 'prop-types'
+import { useCallback, useEffect, useRef } from 'react'
 
 function eventToPosition (event) {
   return {
@@ -14,101 +13,85 @@ function distance (pointA, pointB) {
   )
 }
 
-export default class LongPressable extends React.PureComponent {
-  static propTypes = {
-    onLongPress: PropType.func.isRequired,
-    onShortPress: PropType.func,
-    longPressTime: PropType.number,
-    primaryMouseButtonOnly: PropType.bool,
-    // Maximum distance (pixels) user is allowed to drag before
-    // click is canceled
-    dragThreshold: PropType.number,
-    children: PropType.node
-  }
+// functional rewrite of the old React.PureComponent (C11) — same props,
+// same pointer semantics
+export default function LongPressable ({
+  onLongPress,
+  onShortPress,
+  longPressTime = 500,
+  primaryMouseButtonOnly = true,
+  // Maximum distance (pixels) user is allowed to drag before click is canceled
+  dragThreshold = 100,
+  children
+}) {
+  const timerRef = useRef(null)
+  const isLongPressing = useRef(false)
+  const startingPosition = useRef({ x: 0, y: 0 })
 
-  static defaultProps = {
-    longPressTime: 500,
-    primaryMouseButtonOnly: true,
-    dragThreshold: 100
-  }
-
-  isLongPressing = false
-  startingPosition = { x: 0, y: 0 }
-
-  componentWillUnmount () {
-    this.clearTimeout()
-  }
-
-  clearTimeout = () => {
-    if (this.timerID) {
-      clearTimeout(this.timerID)
-      this.timerID = null
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
     }
-  }
+  }, [])
 
-  handlePointerUp = (e) => {
-    if (this.timerID) {
-      this.cancelLongPress()
-    }
+  useEffect(() => clearTimer, [clearTimer])
 
-    const mousePosition = eventToPosition(e)
+  const exceedDragThreshold = useCallback((point) => {
+    return distance(startingPosition.current, point) > dragThreshold
+  }, [dragThreshold])
 
-    if (!this.isLongPressing &&
-        !this.exceedDragThreshold(mousePosition)) {
-      this.props.onShortPress(e)
-    } else {
-      this.isLongPressing = false
-    }
-  }
-
-  handlePointerDown = (e) => {
-    if (this.props.primaryMouseButtonOnly) {
+  const handlePointerDown = useCallback((e) => {
+    if (primaryMouseButtonOnly) {
       if (e.pointerType === 'mouse' && e.button !== 0) {
         return
       }
     }
 
     // re-initialize long press
-    this.isLongPressing = false
-    this.startingPosition = eventToPosition(e)
+    isLongPressing.current = false
+    startingPosition.current = eventToPosition(e)
 
-    this.timerID = setTimeout(() => {
-      this.isLongPressing = true
-      this.props.onLongPress(e)
-    }, this.props.longPressTime)
-  }
+    timerRef.current = setTimeout(() => {
+      isLongPressing.current = true
+      onLongPress(e)
+    }, longPressTime)
+  }, [primaryMouseButtonOnly, longPressTime, onLongPress])
 
-  handlePointerMove = (e) => {
+  const handlePointerUp = useCallback((e) => {
+    if (timerRef.current) {
+      clearTimer()
+    }
+
     const mousePosition = eventToPosition(e)
-    if (this.timerID && this.exceedDragThreshold(mousePosition)) {
-      this.cancelLongPress()
+
+    if (!isLongPressing.current && !exceedDragThreshold(mousePosition)) {
+      onShortPress(e)
+    } else {
+      isLongPressing.current = false
     }
-  }
+  }, [clearTimer, exceedDragThreshold, onShortPress])
 
-  handlePointerLeave = () => {
-    if (this.timerID) {
-      this.cancelLongPress()
+  const handlePointerMove = useCallback((e) => {
+    if (timerRef.current && exceedDragThreshold(eventToPosition(e))) {
+      clearTimer()
     }
-  }
+  }, [clearTimer, exceedDragThreshold])
 
-  cancelLongPress () {
-    this.clearTimeout()
-  }
+  const handlePointerLeave = useCallback(() => {
+    if (timerRef.current) {
+      clearTimer()
+    }
+  }, [clearTimer])
 
-  exceedDragThreshold (point) {
-    return distance(this.startingPosition, point) > this.props.dragThreshold
-  }
-
-  render () {
-    return (
-      <div
-        onPointerUp={this.handlePointerUp}
-        onPointerDown={this.handlePointerDown}
-        onPointerMove={this.handlePointerMove}
-        onPointerLeave={this.handlePointerLeave}
-      >
-        {this.props.children}
-      </div>
-    )
-  }
+  return (
+    <div
+      onPointerUp={handlePointerUp}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      {children}
+    </div>
+  )
 }
