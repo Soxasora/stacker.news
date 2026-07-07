@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Collapsible, CollapsiblePanel } from '@/components/ui/collapsible'
 import { Input, InputGroup } from '@/components/form'
 import CloseIcon from '@/svgs/close-line.svg'
 import EditIcon from '@/svgs/edit-line.svg'
@@ -25,24 +26,22 @@ function MaxFeeField () {
   const [{ value }] = useField('maxFee')
   const ToggleIcon = showMaxFee ? CloseIcon : EditIcon
 
+  // controlled Collapsible (§6.7) — the icon swap reads the state
   return (
-    <div className={classNames(styles.stackSection, styles.maxFee)}>
+    <Collapsible.Root open={showMaxFee} onOpenChange={setShowMaxFee} className={classNames(styles.stackSection, styles.maxFee)}>
       <div className={styles.maxFeeSummary}>
         <span className={classNames(styles.maxFeeLabel, 'text-muted font-mono')}>
           max fee
         </span>
-        <button
-          type='button'
+        <Collapsible.Trigger
           className={classNames(styles.chip, styles.maxFeeControl, showMaxFee && styles.chipActive, 'font-mono')}
-          onClick={() => setShowMaxFee(show => !show)}
-          aria-expanded={showMaxFee}
         >
           <span className={styles.maxFeeAmount}>{value}</span>
           <span className={classNames(styles.maxFeeUnit, 'text-muted')}>sats</span>
           <ToggleIcon className={classNames(styles.maxFeeIcon, 'text-muted')} width={18} height={18} aria-hidden />
-        </button>
+        </Collapsible.Trigger>
       </div>
-      {showMaxFee && (
+      <CollapsiblePanel>
         <Input
           label='max fee'
           name='maxFee'
@@ -51,7 +50,7 @@ function MaxFeeField () {
           required
           append={<InputGroup.Text className='font-mono'>sats</InputGroup.Text>}
         />
-      )}
-    </div>
+      </CollapsiblePanel>
+    </Collapsible.Root>
   )
 }

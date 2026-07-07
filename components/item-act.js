@@ -1,8 +1,11 @@
-import Button from '@/components/ui/button'
+import { buttonClasses } from '@/components/ui/button'
+import { Toggle } from '@base-ui/react/toggle'
+import { ToggleGroup } from '@base-ui/react/toggle-group'
 import { InputGroup } from '@/components/form'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useApolloClient } from '@apollo/client/react'
 import { Form, Input, SubmitButton } from './form'
+import { useField } from 'formik'
 import { useMe } from './me'
 import UpBolt from '@/svgs/bolt.svg'
 import { amountSchema } from '@/lib/validate'
@@ -20,23 +23,35 @@ import { composeCallbacks } from '@/lib/compose-callbacks'
 
 const defaultTips = [100, 1000, 10_000, 100_000]
 
+// Toggle Group (§6.12): selection is DERIVED from the amount field, never
+// stored — typing a custom amount clears the pressed chip, typing a preset
+// lights it. [data-pressed] affordance is a deliberate new state (D9).
 const Tips = ({ setOValue }) => {
+  const [{ value: amount }] = useField('amount')
   const customTips = getCustomTips()
   const defaultNoCustom = defaultTips.filter(d => !customTips.includes(d))
   const tips = [...customTips, ...defaultNoCustom].slice(0, 7).sort((a, b) => a - b)
 
-  return tips.map((num, i) =>
-    <Button
-      size='sm'
-      key={num}
-      onClick={() => { setOValue(num) }}
+  return (
+    <ToggleGroup
+      className='contents'
+      value={tips.includes(Number(amount)) ? [String(amount)] : []}
+      onValueChange={(v) => v.length && setOValue(Number(v[0]))}
     >
-      <UpBolt
-        className='me-1'
-        width={14}
-        height={14}
-      />{num}
-    </Button>)
+      {tips.map(num =>
+        <Toggle
+          key={num}
+          value={String(num)}
+          className={buttonClasses({ size: 'sm' })}
+        >
+          <UpBolt
+            className='me-1'
+            width={14}
+            height={14}
+          />{num}
+        </Toggle>)}
+    </ToggleGroup>
+  )
 }
 
 const getCustomTips = () => JSON.parse(window.localStorage.getItem('custom-tips')) || []
