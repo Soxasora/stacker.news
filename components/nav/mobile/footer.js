@@ -1,4 +1,4 @@
-import { Nav, Navbar } from 'react-bootstrap'
+import Nav, { Navbar } from '@/components/ui/nav'
 import { Brand, NavNotifications, PostItem, SearchItem } from '../common'
 import { useMe } from '../../me'
 import styles from './footer.module.css'

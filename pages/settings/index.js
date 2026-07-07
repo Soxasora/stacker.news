@@ -1,6 +1,6 @@
 import { Checkbox, Form, Input, InputGroup, labelClasses, SubmitButton, Select, VariableInput, Range } from '@/components/form'
 import Button from '@/components/ui/button'
-import Nav from 'react-bootstrap/Nav'
+import Nav from '@/components/ui/nav'
 import Layout from '@/components/layout'
 import { useMemo } from 'react'
 import { gql } from '@apollo/client'

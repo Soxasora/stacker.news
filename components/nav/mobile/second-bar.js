@@ -1,4 +1,4 @@
-import { Nav, Navbar } from 'react-bootstrap'
+import Nav, { Navbar } from '@/components/ui/nav'
 import { NavWalletSummary, Sorts, hasNavSelect, SignUpButton } from '../common'
 import styles from '../../header.module.css'
 import { useMe } from '@/components/me'

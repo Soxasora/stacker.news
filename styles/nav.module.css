@@ -11,10 +11,10 @@
     gap: 0 0.5rem;
 }
 
-.nav :global .nav-link {
+.nav [data-nav-link] {
     padding-left: 0;
 }
 
-.nav :global .active {
+.nav [data-active] {
     border-bottom: 2px solid var(--bs-primary);
 }

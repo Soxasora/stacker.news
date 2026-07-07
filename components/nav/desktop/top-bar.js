@@ -1,4 +1,4 @@
-import { Nav, Navbar } from 'react-bootstrap'
+import Nav, { Navbar } from '@/components/ui/nav'
 import styles from '../../header.module.css'
 import { Back, Brand, NavPrice, RightCorner, SearchItem } from '../common'
 import { useCommentsNavigatorContext, CommentsNavigator } from '@/components/use-comments-navigator'

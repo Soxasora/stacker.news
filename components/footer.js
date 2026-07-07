@@ -1,5 +1,6 @@
 import Container from '@/components/ui/container'
 import Popover, { PopoverBody } from '@/components/ui/popover'
+import { navLinkClasses } from '@/components/ui/nav'
 import { CopyInput } from './form'
 import styles from './footer.module.css'
 import Texas from '@/svgs/texas.svg'
@@ -22,28 +23,28 @@ import { useLiveCommentsToggle } from './use-live-comments'
 const RssPopover = (
   <PopoverBody style={{ fontWeight: 500, fontSize: '.9rem' }}>
     <div className='flex justify-center'>
-      <a href='/rss' className='nav-link p-0 inline-flex'>
+      <a href='/rss' className={navLinkClasses('p-0 inline-flex')}>
         home
       </a>
       <span className='mx-2 text-muted'> \ </span>
-      <a href='/~bitcoin/rss' className='nav-link p-0 inline-flex'>
+      <a href='/~bitcoin/rss' className={navLinkClasses('p-0 inline-flex')}>
         bitcoin
       </a>
       <span className='mx-2 text-muted'> \ </span>
-      <a href='/~nostr/rss' className='nav-link p-0 inline-flex'>
+      <a href='/~nostr/rss' className={navLinkClasses('p-0 inline-flex')}>
         nostr
       </a>
     </div>
     <div className='flex justify-center'>
-      <a href='/~tech/rss' className='nav-link p-0 inline-flex'>
+      <a href='/~tech/rss' className={navLinkClasses('p-0 inline-flex')}>
         tech
       </a>
       <span className='mx-2 text-muted'> \ </span>
-      <a href='/~meta/rss' className='nav-link p-0 inline-flex'>
+      <a href='/~meta/rss' className={navLinkClasses('p-0 inline-flex')}>
         meta
       </a>
       <span className='mx-2 text-muted'> \ </span>
-      <a href='/~jobs/rss' className='nav-link p-0 inline-flex'>
+      <a href='/~jobs/rss' className={navLinkClasses('p-0 inline-flex')}>
         jobs
       </a>
     </div>
@@ -54,21 +55,21 @@ const SocialsPopover = (
   <PopoverBody style={{ fontWeight: 500, fontSize: '.9rem' }}>
     <div className='flex justify-center'>
       <a
-        href='https://njump.me/npub1jfujw6llhq7wuvu5detycdsq5v5yqf56sgrdq8wlgrryx2a2p09svwm0gx' className='nav-link p-0 inline-flex'
+        href='https://njump.me/npub1jfujw6llhq7wuvu5detycdsq5v5yqf56sgrdq8wlgrryx2a2p09svwm0gx' className={navLinkClasses('p-0 inline-flex')}
         target='_blank' rel='noreferrer'
       >
         nostr
       </a>
       <span className='mx-2 text-muted'> \ </span>
       <a
-        href='https://twitter.com/stacker_news' className='nav-link p-0 inline-flex'
+        href='https://twitter.com/stacker_news' className={navLinkClasses('p-0 inline-flex')}
         target='_blank' rel='noreferrer'
       >
         twitter
       </a>
       <span className='mx-2 text-muted'> \ </span>
       <a
-        href='https://www.youtube.com/@stackernews' className='nav-link p-0 inline-flex'
+        href='https://www.youtube.com/@stackernews' className={navLinkClasses('p-0 inline-flex')}
         target='_blank' rel='noreferrer'
       >
         youtube
@@ -76,14 +77,14 @@ const SocialsPopover = (
     </div>
     <div className='flex justify-center'>
       <a
-        href='https://www.fountain.fm/show/Mg1AWuvkeZSFhsJZ3BW2' className='nav-link p-0 inline-flex'
+        href='https://www.fountain.fm/show/Mg1AWuvkeZSFhsJZ3BW2' className={navLinkClasses('p-0 inline-flex')}
         target='_blank' rel='noreferrer'
       >
         pod
       </a>
       <span className='mx-2 text-muted'> \ </span>
       <a
-        href='https://www.plebpoet.com/zines.html' className='nav-link p-0 inline-flex'
+        href='https://www.plebpoet.com/zines.html' className={navLinkClasses('p-0 inline-flex')}
         target='_blank' rel='noreferrer'
       >
         zines
@@ -95,14 +96,14 @@ const SocialsPopover = (
 const ChatPopover = (
   <PopoverBody style={{ fontWeight: 500, fontSize: '.9rem' }}>
     <a
-      href='https://t.me/k00bideh' className='nav-link p-0 inline-flex'
+      href='https://t.me/k00bideh' className={navLinkClasses('p-0 inline-flex')}
       target='_blank' rel='noreferrer'
     >
       telegram
     </a>
     <span className='mx-2 text-muted'> \ </span>
     <a
-      href='https://signal.group/#CjQKIEt57YiluJoTW3lZqaqAq6echCekEYFfg7eIua2X91nLEhA__6ALI9pkaY_McQqX0jm1' className='nav-link p-0 inline-flex'
+      href='https://signal.group/#CjQKIEt57YiluJoTW3lZqaqAq6echCekEYFfg7eIua2X91nLEhA__6ALI9pkaY_McQqX0jm1' className={navLinkClasses('p-0 inline-flex')}
       target='_blank' rel='noreferrer'
     >
       signal
@@ -113,16 +114,16 @@ const ChatPopover = (
 const LegalPopover = (
   <PopoverBody style={{ fontWeight: 500, fontSize: '.9rem' }}>
     <div className='flex justify-center'>
-      <Link href='/tos' className='nav-link p-0 inline-flex'>
+      <Link href='/tos' className={navLinkClasses('p-0 inline-flex')}>
         terms of service
       </Link>
       <span className='mx-2 text-muted'> \ </span>
-      <Link href='/privacy' className='nav-link p-0 inline-flex'>
+      <Link href='/privacy' className={navLinkClasses('p-0 inline-flex')}>
         privacy policy
       </Link>
     </div>
     <div className='flex justify-center'>
-      <Link href='/copyright' className='nav-link p-0 inline-flex'>
+      <Link href='/copyright' className={navLinkClasses('p-0 inline-flex')}>
         copyright policy
       </Link>
     </div>
@@ -162,36 +163,36 @@ export default function Footer ({ links = true }) {
               <Rewards />
             </div>
             <div className='mb-0' style={{ fontWeight: 500 }}>
-              <Link href='/stackers/all/day' className='nav-link p-0 p-0 inline-flex'>
+              <Link href='/stackers/all/day' className={navLinkClasses('p-0 p-0 inline-flex')}>
                 analytics
               </Link>
               <span className='mx-2 text-muted'> \ </span>
-              <Popover side='top' trigger={<div className='nav-link p-0 p-0 inline-flex' style={{ cursor: 'pointer' }}>chat</div>}>
+              <Popover side='top' trigger={<div className={navLinkClasses('p-0 p-0 inline-flex')} style={{ cursor: 'pointer' }}>chat</div>}>
                 {ChatPopover}
               </Popover>
               <span className='mx-2 text-muted'> \ </span>
-              <Popover side='top' trigger={<div className='nav-link p-0 p-0 inline-flex' style={{ cursor: 'pointer' }}>socials</div>}>
+              <Popover side='top' trigger={<div className={navLinkClasses('p-0 p-0 inline-flex')} style={{ cursor: 'pointer' }}>socials</div>}>
                 {SocialsPopover}
               </Popover>
               <span className='mx-2 text-muted'> \ </span>
-              <Popover side='top' trigger={<div className='nav-link p-0 p-0 inline-flex' style={{ cursor: 'pointer' }}>rss</div>}>
+              <Popover side='top' trigger={<div className={navLinkClasses('p-0 p-0 inline-flex')} style={{ cursor: 'pointer' }}>rss</div>}>
                 {RssPopover}
               </Popover>
             </div>
             <div className='mb-2' style={{ fontWeight: 500 }}>
-              <Link href='/faq' className='nav-link p-0 p-0 inline-flex'>
+              <Link href='/faq' className={navLinkClasses('p-0 p-0 inline-flex')}>
                 faq
               </Link>
               <span className='mx-2 text-muted'> \ </span>
-              <Link href='/guide' className='nav-link p-0 p-0 inline-flex'>
+              <Link href='/guide' className={navLinkClasses('p-0 p-0 inline-flex')}>
                 guide
               </Link>
               <span className='mx-2 text-muted'> \ </span>
-              <Link href='/story' className='nav-link p-0 p-0 inline-flex'>
+              <Link href='/story' className={navLinkClasses('p-0 p-0 inline-flex')}>
                 story
               </Link>
               <span className='mx-2 text-muted'> \ </span>
-              <Popover side='top' trigger={<div className='nav-link p-0 p-0 inline-flex' style={{ cursor: 'pointer' }}>legal</div>}>
+              <Popover side='top' trigger={<div className={navLinkClasses('p-0 p-0 inline-flex')} style={{ cursor: 'pointer' }}>legal</div>}>
                 {LegalPopover}
               </Popover>
             </div>
@@ -200,7 +201,7 @@ export default function Footer ({ links = true }) {
           <div
             className={`mx-auto mb-2 ${styles.connect}`}
           >
-            <small className='nav-item text-muted me-2'>connect:</small>
+            <small className='font-medium text-muted me-2'>connect:</small>
             <CopyInput
               size='sm'
               groupClassName='mb-0 w-full'

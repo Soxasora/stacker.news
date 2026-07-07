@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Nav, Navbar } from 'react-bootstrap'
+import Nav, { Navbar, navLinkClasses } from '@/components/ui/nav'
 import Dropdown from '@/components/ui/dropdown'
 import Button, { buttonClasses } from '@/components/ui/button'
 import styles from '../header.module.css'
@@ -60,7 +60,7 @@ export function Back () {
 
   return (
     <a
-      role='button' tabIndex='0' className='nav-link p-0 me-2' onClick={() => {
+      role='button' tabIndex='0' className={navLinkClasses('p-0 me-2')} onClick={() => {
         if (back) {
           router.back()
         } else {
@@ -99,7 +99,7 @@ export function SearchItem ({ prefix, className }) {
 export function NavPrice ({ className }) {
   return (
     <Nav.Item className={classNames(styles.price, className)}>
-      <Price className='nav-link font-mono' />
+      <Price className={navLinkClasses('font-mono')} />
     </Nav.Item>
   )
 }
@@ -164,7 +164,7 @@ export const Indicator = ({ show, top = '0px', right = '0px', variant = 'seconda
       {children}
       {show && (
         <span
-          className={`absolute p-1 bg-${variant}`}
+          className={`absolute p-1 ${variant === 'danger' ? 'bg-danger' : 'bg-secondary'}`}
           style={{ top, right, height: '5px', width: '5px', border: '1px solid var(--bs-body-bg)' }}
         >
           <span className='invisible'>{' '}</span>
@@ -184,7 +184,7 @@ export function MeDropdown ({ me, dropNavKey }) {
   return (
     <div className='ms-2'>
       <Dropdown className={styles.dropdown} align='end'>
-        <Dropdown.Toggle className='nav-link nav-item font-normal' id='profile' variant='custom'>
+        <Dropdown.Toggle className={navLinkClasses('font-normal')} id='profile' variant='custom'>
           <div className='flex items-center'>
             <Nav.Link eventKey={me.name} as='span' className='p-0'>
               <Indicator show={indicator} top='2px' right='-5px'>@{me.name}</Indicator>
@@ -363,7 +363,7 @@ export function AnonDropdown ({ path }) {
   return (
     <div className='relative'>
       <Dropdown className={classNames(styles.dropdown, 'pe-0')} align='end' autoClose>
-        <Dropdown.Toggle className='nav-link nav-item pe-0' id='profile' variant='custom'>
+        <Dropdown.Toggle className={navLinkClasses('pe-0')} id='profile' variant='custom'>
           <Nav.Link eventKey='anon' as='span' className='p-0 font-normal'>
             @anon<Badges user={{ id: USER_ID.anon }} />
           </Nav.Link>

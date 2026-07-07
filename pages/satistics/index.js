@@ -6,7 +6,7 @@ import { SATISTICS } from '@/fragments/payIn'
 import PayInTable, { PayInSkeleton } from '@/components/payIn/table'
 import { useData } from '@/components/use-data'
 import navStyles from '@/styles/nav.module.css'
-import { Nav } from 'react-bootstrap'
+import Nav from '@/components/ui/nav'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 

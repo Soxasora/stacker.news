@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Nav, Navbar, Offcanvas } from 'react-bootstrap'
+import Nav, { Navbar } from '@/components/ui/nav'
+import Drawer from '@/components/ui/drawer'
 import Dropdown from '@/components/ui/dropdown'
 import { MEDIA_URL } from '@/lib/constants'
 import Link from 'next/link'
@@ -37,11 +38,11 @@ export default function OffCanvas ({ me, dropNavKey }) {
   return (
     <>
       <Indicator show={indicator}><MeImage me={me} onClick={handleShow} /></Indicator>
-      <Offcanvas className={canvasStyles.offcanvas} show={show} onHide={handleClose} placement='end'>
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title><NavWalletSummary /></Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body className='pb-0'>
+      <Drawer className={canvasStyles.offcanvas} show={show} onHide={handleClose} placement='end'>
+        <Drawer.Header closeButton>
+          <Drawer.Title><NavWalletSummary /></Drawer.Title>
+        </Drawer.Header>
+        <Drawer.Body className='pb-0'>
           <div style={{
             '--sn-dropdown-item-py': '.5rem',
             '--sn-dropdown-item-px': 0,
@@ -85,8 +86,8 @@ export default function OffCanvas ({ me, dropNavKey }) {
               </Navbar>
             </div>
           </div>
-        </Offcanvas.Body>
-      </Offcanvas>
+        </Drawer.Body>
+      </Drawer>
     </>
   )
 }

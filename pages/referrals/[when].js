@@ -103,7 +103,7 @@ export default function Referrals ({ ssrData }) {
       <div
         className='pt-12 px-4 flex w-full items-center'
       >
-        <div className='nav-item text-muted pe-2' style={{ 'white-space': 'nowrap' }}>referral link:</div>
+        <div className='font-medium text-muted pe-2' style={{ 'white-space': 'nowrap' }}>referral link:</div>
         <CopyInput
           size='sm'
           groupClassName='mb-0 w-full'

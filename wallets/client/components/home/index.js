@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
-import { Offcanvas } from 'react-bootstrap'
+import Drawer from '@/components/ui/drawer'
 import classNames from 'classnames'
 import { useSetWalletPriorities, useTemplates, useWallets, useWalletSendReady } from '@/wallets/client/hooks'
 import { WalletShell } from '@/wallets/client/components'
@@ -128,13 +128,13 @@ function WalletOrderingControls ({ wallets, ordering, onToggle, className, hintC
 
 function WalletBottomSheet ({ show, onHide, title, children }) {
   return (
-    <Offcanvas className={styles.sheet} show={show} onHide={onHide} placement='bottom'>
-      <Offcanvas.Header closeButton>
-        <Offcanvas.Title>{title}</Offcanvas.Title>
-      </Offcanvas.Header>
-      <Offcanvas.Body>
+    <Drawer className={styles.sheet} show={show} onHide={onHide} placement='bottom'>
+      <Drawer.Header closeButton>
+        <Drawer.Title>{title}</Drawer.Title>
+      </Drawer.Header>
+      <Drawer.Body>
         {children}
-      </Offcanvas.Body>
-    </Offcanvas>
+      </Drawer.Body>
+    </Drawer>
   )
 }

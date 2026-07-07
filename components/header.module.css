@@ -35,7 +35,7 @@
     border-radius: .4rem;
 }
 
-.navLink {
+.navLink[data-nav-link] {
     padding: 0.25rem 1rem;
 }
 
@@ -48,10 +48,6 @@
 .navbar {
     padding: .5rem 0;
     background-color: transparent !important;
-}
-
-.navLink.active svg {
-    fill: var(--theme-navLinkActive);
 }
 
 .hide {

@@ -1,4 +1,4 @@
-import { Nav, Navbar } from 'react-bootstrap'
+import Nav, { Navbar } from '@/components/ui/nav'
 import { NavSelect, PostItem, Sorts, hasNavSelect } from '../common'
 import styles from '../../header.module.css'
 import { useBranding } from '../../territory-branding'

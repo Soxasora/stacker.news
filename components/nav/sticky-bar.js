@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import styles from '@/components/header.module.css'
-import { Nav, Navbar } from 'react-bootstrap'
+import Nav, { Navbar } from '@/components/ui/nav'
 import Container from '@/components/ui/container'
 import { NavPrice, SearchItem, Back, NavWalletSummary, Brand, SignUpButton, RightCorner } from './common'
 import { useMe } from '@/components/me'

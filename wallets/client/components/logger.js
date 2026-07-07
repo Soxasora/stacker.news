@@ -1,3 +1,4 @@
+import { navLinkClasses } from '@/components/ui/nav'
 import Button from '@/components/ui/button'
 import styles from '@/styles/logger.module.css'
 import { useWalletLogs, useDeleteWalletLogs } from '@/wallets/client/hooks/logger'
@@ -26,7 +27,7 @@ export function WalletLogs ({ wallet, payInId, className, poll = true, pollInter
         <div className='flex w-full items-center mb-4'>
           <span
             style={{ cursor: 'pointer' }}
-            className='text-muted font-bold nav-link ms-auto' onClick={onDelete}
+            className={navLinkClasses('text-muted font-bold ms-auto')} onClick={onDelete}
           >clear logs
           </span>
         </div>
