@@ -1,6 +1,6 @@
 import { useMutation } from '@apollo/client/react'
 import { gql } from 'graphql-tag'
-import Dropdown from 'react-bootstrap/Dropdown'
+import Dropdown from '@/components/ui/dropdown'
 import { useToast } from './toast'
 
 export default function BookmarkDropdownItem ({ item: { id, meBookmark } }) {

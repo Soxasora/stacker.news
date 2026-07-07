@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useState } from 'react'
 import Badge from '@/components/ui/badge'
-import Dropdown from 'react-bootstrap/Dropdown'
+import Dropdown from '@/components/ui/dropdown'
 import Countdown from './countdown'
 import { abbrNum, numWithUnits } from '@/lib/format'
 import { newComments, commentsViewedAt } from '@/lib/new-comments'
@@ -206,9 +206,9 @@ export default function ItemInfo ({
               {me && <BookmarkDropdownItem item={item} />}
               {me && <SubscribeDropdownItem item={item} />}
               {item.otsHash &&
-                <Link href={`/items/${item.id}/ots`} className='text-reset dropdown-item'>
+                <Dropdown.Item as={Link} href={`/items/${item.id}/ots`}>
                   opentimestamp
-                </Link>}
+                </Dropdown.Item>}
               {item?.noteId && (
                 <Dropdown.Item onClick={() => window.open(`https://njump.me/${item.noteId}`, '_blank', 'noopener,noreferrer,nofollow')}>
                   nostr note
@@ -222,29 +222,29 @@ export default function ItemInfo ({
               : <DontLikeThisDropdownItem item={item} />)}
               {item.mine && item.payIn?.id &&
                 <>
-                  <hr className='dropdown-divider' />
-                  <Link href={`/transactions/${item.payIn?.id}`} className='text-reset dropdown-item'>
+                  <Dropdown.Divider />
+                  <Dropdown.Item as={Link} href={`/transactions/${item.payIn?.id}`}>
                     view payment
-                  </Link>
+                  </Dropdown.Item>
                 </>}
               {me && !nested && !item.mine && sub && Number(me.id) !== Number(sub.userId) &&
                 <>
-                  <hr className='dropdown-divider' />
+                  <Dropdown.Divider />
                   <MuteSubDropdownItem item={item} sub={sub} />
                 </>}
               {canPin &&
                 <>
-                  <hr className='dropdown-divider' />
+                  <Dropdown.Divider />
                   <PinSubDropdownItem item={item} />
                 </>}
               {item.mine && !item.position && !item.deletedAt && !item.bio &&
                 <>
-                  <hr className='dropdown-divider' />
+                  <Dropdown.Divider />
                   <DeleteDropdownItem itemId={item.id} type={item.title ? 'post' : 'comment'} />
                 </>}
               {me && !item.mine &&
                 <>
-                  <hr className='dropdown-divider' />
+                  <Dropdown.Divider />
                   <MuteDropdownItem user={item.user} />
                 </>}
             </ActionDropdown>

@@ -1,12 +1,19 @@
-import React, { useState, useMemo } from 'react'
-import Dropdown from 'react-bootstrap/Dropdown'
+import { useState, useMemo } from 'react'
+import { Popover } from '@base-ui/react/popover'
 import FormControl from 'react-bootstrap/FormControl'
 import TocIcon from '@/svgs/list-unordered.svg'
 import { useRouter } from 'next/router'
 import { $extractHeadingsFromRoot } from '@/lib/lexical/utils/toc'
+import { dropdownStyles, menuClasses } from '@/components/ui/dropdown'
+import { cn } from '@/lib/cn'
 
+// Popover, not Menu (deviation D5): Menu's typeahead would eat printable keys
+// from the filter field. Controlled `open` so a heading click closes before
+// emitting navigation.
 export default function Toc ({ text, readerRef }) {
   const router = useRouter()
+  const [open, setOpen] = useState(false)
+  const [filter, setFilter] = useState('')
 
   const toc = useMemo(() => {
     if (!readerRef || !text || text.length === 0) return []
@@ -19,70 +26,38 @@ export default function Toc ({ text, readerRef }) {
   }
 
   return (
-    <Dropdown align='end' className='flex items-center mb-1'>
-      <Dropdown.Toggle as={CustomToggle} id='dropdown-custom-components'>
-        <TocIcon width={20} height={20} className='mx-2 fill-grey theme' />
-      </Dropdown.Toggle>
-
-      <Dropdown.Menu as={CustomMenu}>
-        {toc.map(v => {
-          return (
-            <Dropdown.Item
-              className={v.depth === 1 ? 'font-bold' : ''}
-              style={{
-                marginLeft: `${(v.depth - 1) * 5}px`
-              }}
-              href={`#${v.slug}`} key={v.slug}
-              // nextjs router doesn't emit hashChangeStart events
-              onClick={() => router.events.emit('hashChangeStart', `#${v.slug}`, { shallow: true })}
-            >{v.text || v.heading}
-            </Dropdown.Item>
-          )
-        })}
-      </Dropdown.Menu>
-    </Dropdown>
+    <div className='flex items-center mb-1'>
+      <Popover.Root open={open} onOpenChange={setOpen}>
+        <Popover.Trigger render={<a role='button' tabIndex={0} />} nativeButton={false}>
+          <TocIcon width={20} height={20} className='mx-2 fill-grey theme' />
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Positioner side='bottom' align='end' sideOffset={2} className={dropdownStyles.positioner}>
+            <Popover.Popup className={menuClasses()}>
+              <FormControl
+                className='mx-4 my-2 w-auto'
+                placeholder='filter'
+                onChange={(e) => setFilter(e.target.value)}
+                value={filter}
+              />
+              {toc.filter(v => !filter || (v.text || v.heading).toLowerCase().includes(filter)).map(v => (
+                <a
+                  key={v.slug}
+                  href={`#${v.slug}`}
+                  className={cn(dropdownStyles.item, v.depth === 1 && 'font-bold')}
+                  style={{ marginLeft: `${(v.depth - 1) * 5}px` }}
+                  onClick={() => {
+                    setOpen(false)
+                    // nextjs router doesn't emit hashChangeStart events
+                    router.events.emit('hashChangeStart', `#${v.slug}`, { shallow: true })
+                  }}
+                >{v.text || v.heading}
+                </a>
+              ))}
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
+    </div>
   )
 }
-
-const CustomToggle = React.forwardRef(({ children, onClick }, ref) => (
-  <a
-    href=''
-    ref={ref}
-    onClick={(e) => {
-      e.preventDefault()
-      onClick(e)
-    }}
-  >
-    {children}
-  </a>
-))
-
-// forwardRef again here!
-// Dropdown needs access to the DOM of the Menu to measure it
-const CustomMenu = React.forwardRef(
-  ({ children, style, className, 'aria-labelledby': labeledBy }, ref) => {
-    const [value, setValue] = useState('')
-
-    return (
-      <div
-        ref={ref}
-        style={style}
-        className={className}
-        aria-labelledby={labeledBy}
-      >
-        <FormControl
-          className='mx-4 my-2 w-auto'
-          placeholder='filter'
-          onChange={(e) => setValue(e.target.value)}
-          value={value}
-        />
-        <ul className='list-unstyled'>
-          {React.Children.toArray(children).filter(
-            (child) =>
-              !value || child.props.children.toLowerCase().includes(value)
-          )}
-        </ul>
-      </div>
-    )
-  }
-)

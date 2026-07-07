@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import Dropdown from 'react-bootstrap/Dropdown'
+import { dropdownStyles, menuClasses } from '@/components/ui/dropdown'
+import { cn } from '@/lib/cn'
 import { useApolloClient } from '@apollo/client/react'
 import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import useDebounceCallback from '@/components/use-debounce-callback'
 import { USER_SUGGESTIONS } from '@/fragments/users'
 import { SUB_SUGGESTIONS } from '@/fragments/subs'
-import styles from '@/lib/lexical/theme/editor.module.css'
 import { BLUR_COMMAND, COMMAND_PRIORITY_HIGH } from 'lexical'
 import { isMarkdownMode } from '@/lib/lexical/commands/utils'
 import { $createUserMentionNode } from '@/lib/lexical/nodes/decorative/mentions/user'
@@ -157,21 +157,28 @@ export default function MentionsPlugin () {
       ) =>
         anchorElementRef.current && suggestions?.length
           ? createPortal(
-            <Dropdown show style={{ zIndex: 1000 }}>
-              <Dropdown.Menu className={styles.suggestionsMenu} onMouseDown={e => e.preventDefault()}>
-                {options.map((o, i) =>
-                  <Dropdown.Item
-                    key={o.key}
-                    active={selectedIndex === i}
-                    onClick={() => {
-                      setHighlightedIndex(i)
-                      selectOptionAndCleanUp(o)
-                    }}
-                  >
-                    {o.name}
-                  </Dropdown.Item>)}
-              </Dropdown.Menu>
-            </Dropdown>, anchorElementRef.current)
+            // plain listbox, not a Base UI Menu (deviation D4): Lexical owns
+            // the anchor rect and keyboard; a Menu would double-manage focus
+            <div
+              role='listbox'
+              className={menuClasses()}
+              style={{ zIndex: 'var(--sn-z-dropdown)' }}
+              onMouseDown={e => e.preventDefault()}
+            >
+              {options.map((o, i) =>
+                <div
+                  role='option'
+                  aria-selected={selectedIndex === i}
+                  key={o.key}
+                  className={cn(dropdownStyles.item, selectedIndex === i && dropdownStyles.active)}
+                  onClick={() => {
+                    setHighlightedIndex(i)
+                    selectOptionAndCleanUp(o)
+                  }}
+                >
+                  {o.name}
+                </div>)}
+            </div>, anchorElementRef.current)
           : null}
     />
   )

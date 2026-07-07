@@ -1,4 +1,4 @@
-import Dropdown from 'react-bootstrap/Dropdown'
+import Dropdown from '@/components/ui/dropdown'
 import ShareIcon from '@/svgs/share-fill.svg'
 import copy from 'clipboard-copy'
 import useCrossposter from './use-crossposter'

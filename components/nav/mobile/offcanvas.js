@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Dropdown, Nav, Navbar, Offcanvas } from 'react-bootstrap'
+import { Nav, Navbar, Offcanvas } from 'react-bootstrap'
+import Dropdown from '@/components/ui/dropdown'
 import { MEDIA_URL } from '@/lib/constants'
 import Link from 'next/link'
 import { Indicator, LoginButtons, LogoutDropdownItem, NavWalletSummary } from '../common'
@@ -42,10 +43,8 @@ export default function OffCanvas ({ me, dropNavKey }) {
         </Offcanvas.Header>
         <Offcanvas.Body className='pb-0'>
           <div style={{
-            '--bs-dropdown-item-padding-y': '.5rem',
-            '--bs-dropdown-item-padding-x': 0,
-            '--bs-dropdown-divider-bg': '#ced4da',
-            '--bs-dropdown-divider-margin-y': '0.5rem',
+            '--sn-dropdown-item-py': '.5rem',
+            '--sn-dropdown-item-px': 0,
             height: '100%',
             display: 'flex',
             flexDirection: 'column'

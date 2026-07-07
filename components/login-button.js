@@ -2,15 +2,17 @@ import GithubIcon from '@/svgs/github-fill.svg'
 import TwitterIcon from '@/svgs/twitter-fill.svg'
 import LightningIcon from '@/svgs/bolt.svg'
 import NostrIcon from '@/svgs/nostr.svg'
-import Button from 'react-bootstrap/Button'
+import Button, { buttonClasses } from '@/components/ui/button'
 import useCookie from './use-cookie'
 import { cookieOptions, MULTI_AUTH_POINTER } from '@/lib/auth'
 import { useAccounts } from './account'
 import SNIcon from '@/svgs/sn.svg'
-import { ButtonGroup, Dropdown } from 'react-bootstrap'
+import { Menu } from '@base-ui/react/menu'
+import { dropdownStyles } from '@/components/ui/dropdown'
 import styles from '@/components/dropdown.module.css'
 import ArrowDownIcon from '@/svgs/editor/toolbar/arrow-down.svg'
 import classNames from 'classnames'
+import { cn } from '@/lib/cn'
 import { useRouter } from 'next/router'
 
 export default function LoginButton ({ text, type, className, onClick, disabled }) {
@@ -58,13 +60,15 @@ export function LoginWithNymButton ({ className, callbackUrl, disabled }) {
 
   const title = account ? `Log in with @${account.name}` : 'Log in with @nym'
 
+  // renders as one visual button (§6.8): main button grows, caret trigger
+  // joins it — $btn-border-width is 0 so no -1px border collapse is needed
   return (
-    <Dropdown className='mb-6 w-full' as={ButtonGroup}>
+    <div className='mb-6 w-full inline-flex'>
       <Button
         variant='success'
         onClick={() => account && router.push(callbackUrl)}
         disabled={disabled || !account}
-        className={className}
+        className={cn('grow rounded-e-none', className)}
         title={title}
         style={{ minWidth: 0 }}
       >
@@ -72,31 +76,34 @@ export function LoginWithNymButton ({ className, callbackUrl, disabled }) {
         <span className='truncate' style={{ minWidth: 0 }}>{title}</span>
       </Button>
       {(accounts.length > 1 || !account) && (
-        <>
-          <Dropdown.Toggle
-            split
-            variant='success'
-            onPointerDown={e => { e.preventDefault(); e.stopPropagation() }}
+        <Menu.Root modal={false}>
+          <Menu.Trigger
             title='select account'
+            onPointerDown={e => { e.preventDefault(); e.stopPropagation() }}
+            className={cn(buttonClasses({ variant: 'success' }), 'rounded-s-none')}
             style={{ maxWidth: '42px' }}
           >
             <ArrowDownIcon width={16} height={16} />
-          </Dropdown.Toggle>
-          <Dropdown.Menu className={styles.dropdownExtra} style={{ width: '150px' }}>
-            {accounts.map(account => (
-              <Dropdown.Item
-                key={account.id}
-                onClick={() => {
-                  setPointerCookie(account.id, cookieOptions({ httpOnly: false }))
-                }}
-                className={classNames(styles.dropdownExtraItem, Number(account.id) === Number(pointerCookie) && styles.active)}
-              >
-                <span className={styles.dropdownExtraItemText}>{account.name}</span>
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </>
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Positioner side='bottom' align='start' sideOffset={2} className={dropdownStyles.positioner}>
+              <Menu.Popup className={classNames(dropdownStyles.menu, styles.dropdownExtra)} style={{ width: '150px' }}>
+                {accounts.map(account => (
+                  <Menu.Item
+                    key={account.id}
+                    onClick={() => {
+                      setPointerCookie(account.id, cookieOptions({ httpOnly: false }))
+                    }}
+                    className={classNames(styles.dropdownExtraItem, Number(account.id) === Number(pointerCookie) && styles.active)}
+                  >
+                    <span className={styles.dropdownExtraItemText}>{account.name}</span>
+                  </Menu.Item>
+                ))}
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
       )}
-    </Dropdown>
+    </div>
   )
 }

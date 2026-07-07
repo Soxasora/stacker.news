@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Dropdown, Nav, Navbar } from 'react-bootstrap'
+import { Nav, Navbar } from 'react-bootstrap'
+import Dropdown from '@/components/ui/dropdown'
 import Button, { buttonClasses } from '@/components/ui/button'
 import styles from '../header.module.css'
 import { useRouter } from 'next/router'

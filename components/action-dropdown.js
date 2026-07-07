@@ -1,5 +1,4 @@
-import Dropdown from 'react-bootstrap/Dropdown'
-import styles from './item.module.css'
+import Dropdown from '@/components/ui/dropdown'
 import MoreIcon from '@/svgs/more-fill.svg'
 
 export default function ActionDropdown ({ children }) {
@@ -7,11 +6,12 @@ export default function ActionDropdown ({ children }) {
     return null
   }
   return (
-    <Dropdown className={`pointer ${styles.dropdown}`} as='span'>
-      <Dropdown.Toggle variant='success' as='a' onPointerDown={e => e.preventDefault()}>
+    <Dropdown className='pointer' as='span'>
+      <Dropdown.Toggle as='a' onPointerDown={e => e.preventDefault()}>
         <MoreIcon className='fill-grey ms-1' height={16} width={16} />
       </Dropdown.Toggle>
-      <Dropdown.Menu>
+      {/* roomy = the .5rem item padding item-info's module skin used to force */}
+      <Dropdown.Menu roomy>
         {children}
       </Dropdown.Menu>
     </Dropdown>

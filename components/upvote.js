@@ -12,7 +12,7 @@ import LongPressable from './long-pressable'
 import Popover from '@/components/ui/popover'
 import { useShowModal } from './modal'
 import { numWithUnits } from '@/lib/format'
-import { Dropdown } from 'react-bootstrap'
+import Dropdown from '@/components/ui/dropdown'
 import classNames from 'classnames'
 
 const UpvotePopover = ({ target, show, handleClose }) => {

@@ -3,7 +3,7 @@ import { gql } from 'graphql-tag'
 import { useState } from 'react'
 import Alert from '@/components/ui/alert'
 import Button from '@/components/ui/button'
-import Dropdown from 'react-bootstrap/Dropdown'
+import Dropdown from '@/components/ui/dropdown'
 import { useShowModal } from './modal'
 import { useToast } from './toast'
 

@@ -1,0 +1,85 @@
+/* SN dropdown-menu chrome (keystone 6: colors/state/motion here, box metrics
+   in dropdown.js recipe strings).
+   PR3 handoff: consumes --theme-inputBg / --theme-borderColor /
+   --theme-dropdownItemColor(Hover) / --theme-brandColor (SN-owned, survive
+   the rename) and --bs-primary (PR3 sweeps to --sn-primary). */
+
+.positioner {
+  z-index: var(--sn-z-dropdown);   /* portals to <body>; ladder is the only z authority */
+}
+
+.menu {
+  background-color: var(--theme-inputBg);
+  border: 1px solid var(--theme-borderColor);
+  max-width: 90vw;                 /* globals .dropdown-menu parity */
+  overflow: auto;
+  outline: 0;
+  transform-origin: var(--transform-origin);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;   /* keystone 5 */
+}
+
+.menu[data-starting-style],
+.menu[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.menu[data-instant] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    transition: none;
+  }
+}
+
+/* item padding rides vars so menu variants can retune it without fighting
+   utilities (the .other :global(.dropdown-item) consumer rule died here) */
+.roomy {
+  --sn-dropdown-item-py: .5rem;
+}
+
+.item {
+  display: block;
+  width: 100%;
+  padding: var(--sn-dropdown-item-py, .25rem) var(--sn-dropdown-item-px, 1.5rem);
+  clear: both;
+  font-weight: 500;
+  color: var(--theme-dropdownItemColor);
+  text-align: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  outline: 0;
+}
+
+.item:hover,
+.item[data-highlighted] {
+  color: var(--theme-dropdownItemColorHover);
+}
+
+.item.active {
+  color: var(--theme-brandColor);
+  text-shadow: 0 0 10px var(--bs-primary);
+}
+
+.divider {
+  margin: .5rem 0;
+  border: 0;
+  border-top: 1px solid var(--theme-borderColor);
+  overflow: hidden;
+}
+
+.toggle {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  user-select: none;
+}

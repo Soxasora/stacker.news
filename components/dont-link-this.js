@@ -1,4 +1,4 @@
-import Dropdown from 'react-bootstrap/Dropdown'
+import Dropdown from '@/components/ui/dropdown'
 import { useShowModal } from './modal'
 import { useToast } from './toast'
 import ItemAct from './item-act'

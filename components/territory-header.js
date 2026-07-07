@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { Dropdown } from 'react-bootstrap'
+import Dropdown from '@/components/ui/dropdown'
 import Badge from '@/components/ui/badge'
 import Button, { buttonClasses } from '@/components/ui/button'
 import { AccordianCard } from './accordian-item'

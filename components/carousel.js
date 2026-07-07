@@ -4,7 +4,7 @@ import ArrowLeft from '@/svgs/arrow-left-line.svg'
 import ArrowRight from '@/svgs/arrow-right-line.svg'
 import styles from './carousel.module.css'
 import { useShowModal } from './modal'
-import { Dropdown } from 'react-bootstrap'
+import Dropdown from '@/components/ui/dropdown'
 
 function useSwiping ({ moveLeft, moveRight }) {
   const [touchStartX, setTouchStartX] = useState(null)
