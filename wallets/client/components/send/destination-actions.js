@@ -1,6 +1,7 @@
 import QrScanner from '@/components/qr-scanner'
 import { useToast } from '@/components/toast'
 import sharedStyles from '@/wallets/client/components/wallet.module.css'
+import modalStyles from '@/components/modal.module.css'
 import sendStyles from './send.module.css'
 import CameraIcon from '@/svgs/camera-line.svg'
 import ClipboardIcon from '@/svgs/clipboard-line.svg'
@@ -79,7 +80,7 @@ export function DestinationActions ({ onValue }) {
           <div className={styles.scannerHeader}>
             <button
               type='button'
-              className={`modal-btn modal-close ${styles.scannerClose}`}
+              className={classNames(modalStyles.btn, modalStyles.close, styles.scannerClose)}
               onClick={() => setScanning(false)}
               aria-label='close scanner'
             >

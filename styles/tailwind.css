@@ -89,7 +89,10 @@
    * consumes these vars, never literal z-index values.
    */
   --sn-z-sticky: 900;
-  --sn-z-dropdown: 1000;
+  /* 1060, not Bootstrap's 1000 (revised C6): Base UI portals menus to <body>,
+     so a menu opened from inside a modal must out-stack the modal viewport
+     (Bootstrap kept menus in the modal's DOM instead) */
+  --sn-z-dropdown: 1060;
   --sn-z-drawer-backdrop: 1040;
   --sn-z-drawer: 1045;
   --sn-z-backdrop: 1050;

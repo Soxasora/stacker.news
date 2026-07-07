@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
-import Modal from 'react-bootstrap/Modal'
+import { Dialog } from '@base-ui/react/dialog'
 import BackArrow from '@/svgs/arrow-left-line.svg'
 import { useRouter } from 'next/router'
 import ActionDropdown from './action-dropdown'
+import { cn } from '@/lib/cn'
+import styles from './modal.module.css'
 
 export class ModalClosedError extends Error {
   constructor () {
@@ -92,29 +94,36 @@ export default function useModal () {
 
     const content = getCurrentContent()
     const { overflow, keepOpen, fullScreen } = content.options || {}
-    const className = fullScreen ? 'fullscreen' : ''
 
+    // ONE controlled Dialog.Root for the whole stack, content swapped in
+    // place (deviation D1) — nested Dialogs can't express back/keepOpen.
+    // keepOpen = ignore every close request (outside press, Escape).
     return (
-      <Modal
-        onHide={keepOpen ? undefined : onClose} show={!!content}
-        className={className}
-        dialogClassName={className}
-        contentClassName={className}
+      <Dialog.Root
+        open
+        onOpenChange={open => { if (!open && !keepOpen) onClose() }}
       >
-        <div className='flex flex-row'>
-          {overflow &&
-            <div className={'modal-btn modal-overflow ' + className}>
-              <ActionDropdown>
-                {overflow}
-              </ActionDropdown>
-            </div>}
-          {modalStack.current.length > 1 ? <div className='modal-btn modal-back' onClick={onBack}><BackArrow width={18} height={18} /></div> : null}
-          <div className={'modal-btn modal-close ' + className} onClick={onClose}>X</div>
-        </div>
-        <Modal.Body className={className}>
-          {content.node}
-        </Modal.Body>
-      </Modal>
+        <Dialog.Portal>
+          <Dialog.Backdrop className={styles.backdrop} />
+          <Dialog.Viewport className={cn(styles.viewport, fullScreen && styles.fullscreenViewport)}>
+            <Dialog.Popup className={cn(styles.dialog, 'rounded-lg', fullScreen && styles.fullscreenDialog)}>
+              <div className='flex flex-row'>
+                {overflow &&
+                  <div className={cn(styles.btn, fullScreen && styles.fullscreenOverflow)}>
+                    <ActionDropdown>
+                      {overflow}
+                    </ActionDropdown>
+                  </div>}
+                {modalStack.current.length > 1 ? <div className={cn(styles.btn, styles.back)} onClick={onBack}><BackArrow width={18} height={18} /></div> : null}
+                <div className={cn(styles.btn, styles.close, fullScreen && styles.fullscreenClose)} onClick={onClose}>X</div>
+              </div>
+              <div className={cn(styles.body, fullScreen && styles.fullscreenBody)}>
+                {content.node}
+              </div>
+            </Dialog.Popup>
+          </Dialog.Viewport>
+        </Dialog.Portal>
+      </Dialog.Root>
     )
   }, [render])
 

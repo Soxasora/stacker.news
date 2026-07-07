@@ -1,0 +1,123 @@
+/* SN modal chrome — the globals.scss .modal-* blocks under local names
+   (C6; the originals die in PR3). Keystone 6: colors/state/motion here,
+   the border radius rides the recipe (rounded-lg).
+   PR3 handoff: consumes --theme-inputBg / --theme-borderColor. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sn-z-backdrop);
+  background-color: rgba(0, 0, 0, .5);
+  transition: opacity 150ms ease-out;
+}
+
+.backdrop[data-starting-style] {
+  opacity: 0;
+}
+
+.viewport {
+  position: fixed;
+  inset: 0;
+  z-index: var(--sn-z-modal);
+  overflow-x: hidden;
+  overflow-y: auto;     /* long modals scroll the viewport, Bootstrap-style */
+}
+
+.dialog {
+  position: relative;
+  width: auto;
+  max-width: 500px;
+  margin: .5rem;
+  background-color: var(--theme-inputBg);
+  border: 1px solid var(--theme-borderColor);
+  outline: 0;
+  transform-origin: center;
+  transition: opacity 150ms ease-out, transform 150ms ease-out;   /* keystone 5 */
+}
+
+@media (min-width: 576px) {
+  .dialog {
+    margin: 1.75rem auto;
+  }
+}
+
+.dialog[data-starting-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .dialog {
+    transition: none;
+  }
+}
+
+.btn {
+  cursor: pointer;
+  display: flex;
+  padding-top: 1rem;
+  align-items: center;
+}
+
+.back {
+  margin-right: auto;
+  padding-left: 1.5rem;
+}
+
+.close {
+  margin-left: auto;
+  padding-right: 1.5rem;
+  font-family: "lightning";
+  font-size: 160%;
+  line-height: 1rem;
+}
+
+.close:hover {
+  opacity: 0.7;
+}
+
+/* $modal-inner-padding: 2rem. (globals' `.modal-close+.modal-body` .5rem
+   top-padding rule was DEAD — the close button never was the body's adjacent
+   sibling — so it is deliberately not ported) */
+.body {
+  padding: 2rem;
+}
+
+.body li {
+  line-height: 1.25;
+  margin-top: 0.5rem;
+}
+
+.body:has(video) {
+  width: 100%;
+}
+
+/* fullscreen — the QR/carousel mode */
+.fullscreenViewport {
+  background-color: color-mix(in srgb, var(--theme-inputBg) 66%, transparent);
+}
+
+.fullscreenDialog {
+  margin: 0;
+  max-width: 100vw;
+  max-height: 100svh;
+  background-color: transparent;
+  border: none;
+}
+
+.fullscreenBody {
+  width: 100vw;
+  height: calc(100svh - 6.8rem);
+  padding: 0;
+  background-color: transparent;
+}
+
+.fullscreenClose {
+  padding: 1.25rem;
+}
+
+.fullscreenOverflow {
+  padding: 1.25rem;
+  margin-top: -10px;
+}
