@@ -1,0 +1,102 @@
+/* SN popover chrome (keystone 6: colors/state/motion live here; box metrics
+   ride the recipe utility strings in popover.js).
+   PR3 handoff: consumes --bs-body-bg / --bs-body-color / --theme-borderColor —
+   the PR3 var sweep renames them to --sn-* mechanically. */
+
+.positioner {
+  z-index: var(--sn-z-popover);   /* portals to <body>; ladder is the only z authority */
+}
+
+.popup {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--theme-borderColor);
+  transform-origin: var(--transform-origin);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;   /* keystone 5 */
+}
+
+.popup[data-starting-style],
+.popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.98);
+}
+
+.popup[data-instant] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup {
+    transition: none;
+  }
+}
+
+.header {
+  border-bottom: 1px solid var(--theme-borderColor);
+}
+
+/* lightning-font X, same paint as ui/alert.module.css .close but sized for a
+   flex header row (replaces the absolutely-positioned .btn-close chrome the
+   old popover headers borrowed from .alert-dismissible) */
+.close {
+  padding: .5rem;
+  margin: -.5rem -.5rem -.5rem auto;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: #000;
+  opacity: .5;
+  font-family: lightning;
+  font-weight: 300;
+  font-size: 150%;
+  line-height: 1;
+}
+
+.close:hover {
+  opacity: .75;
+}
+
+.close:focus {
+  outline: 0;
+  box-shadow: 0 0 0 .25rem rgba(250, 218, 94, .25);
+  opacity: 1;
+}
+
+:global([data-bs-theme='dark']) .close {
+  color: #fff;
+}
+
+/* bordered diamond arrow: rotated square, half-protruding; the inner half
+   covers the popup's border segment (the "notch"), and only the two edges
+   forming the protruding corner draw a border. data-side = popup side, so
+   side='top' puts the arrow on the popup's BOTTOM edge pointing down. */
+.arrow {
+  width: 12px;
+  height: 12px;
+  background-color: var(--bs-body-bg);
+  transform: rotate(45deg);
+}
+
+.arrow[data-side='top'] {
+  bottom: -6px;
+  border-bottom: 1px solid var(--theme-borderColor);
+  border-right: 1px solid var(--theme-borderColor);
+}
+
+.arrow[data-side='bottom'] {
+  top: -6px;
+  border-top: 1px solid var(--theme-borderColor);
+  border-left: 1px solid var(--theme-borderColor);
+}
+
+.arrow[data-side='left'] {
+  right: -6px;
+  border-top: 1px solid var(--theme-borderColor);
+  border-right: 1px solid var(--theme-borderColor);
+}
+
+.arrow[data-side='right'] {
+  left: -6px;
+  border-bottom: 1px solid var(--theme-borderColor);
+  border-left: 1px solid var(--theme-borderColor);
+}

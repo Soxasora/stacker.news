@@ -9,8 +9,7 @@ import { useMe } from './me'
 import getColor from '@/lib/rainbow'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import LongPressable from './long-pressable'
-import Overlay from 'react-bootstrap/Overlay'
-import Popover from 'react-bootstrap/Popover'
+import Popover from '@/components/ui/popover'
 import { useShowModal } from './modal'
 import { numWithUnits } from '@/lib/format'
 import { Dropdown } from 'react-bootstrap'
@@ -19,40 +18,28 @@ import classNames from 'classnames'
 const UpvotePopover = ({ target, show, handleClose }) => {
   const { me } = useMe()
   return (
-    <Overlay
-      show={show}
-      target={target}
-      placement='right'
-    >
-      <Popover id='popover-basic'>
-        <Popover.Header className='flex justify-between alert-dismissible' as='h4'>Zapping
-          <button type='button' className='btn-close' onClick={handleClose}><span className='sr-only focus-within:not-sr-only'>Close alert</span></button>
-        </Popover.Header>
+    <Popover.Root open={show} onOpenChange={open => !open && handleClose()}>
+      <Popover.Content anchor={target} side='right'>
+        <Popover.Header onClose={handleClose}>Zapping</Popover.Header>
         <Popover.Body>
           <div className='mb-2'>Press the bolt again to zap {me?.privates?.tipRandom ? 'a random amount of' : `${me?.privates?.tipDefault || 1} more`} sat{me?.privates?.tipDefault > 1 ? 's' : ''}.</div>
           <div>Repeatedly press the bolt to zap more sats.</div>
         </Popover.Body>
-      </Popover>
-    </Overlay>
+      </Popover.Content>
+    </Popover.Root>
   )
 }
 
 const TipPopover = ({ target, show, handleClose }) => (
-  <Overlay
-    show={show}
-    target={target}
-    placement='right'
-  >
-    <Popover id='popover-basic'>
-      <Popover.Header className='flex justify-between alert-dismissible' as='h4'>Press and hold
-        <button type='button' className='btn-close' onClick={handleClose}><span className='sr-only focus-within:not-sr-only'>Close alert</span></button>
-      </Popover.Header>
+  <Popover.Root open={show} onOpenChange={open => !open && handleClose()}>
+    <Popover.Content anchor={target} side='right'>
+      <Popover.Header onClose={handleClose}>Press and hold</Popover.Header>
       <Popover.Body>
         <div className='mb-2'>Press and hold bolt to zap a custom amount.</div>
         <div>As you zap more, the bolt color follows the rainbow.</div>
       </Popover.Body>
-    </Popover>
-  </Overlay>
+    </Popover.Content>
+  </Popover.Root>
 )
 
 export function DropdownItemUpVote ({ item }) {

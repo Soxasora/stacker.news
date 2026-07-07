@@ -1,41 +1,28 @@
-import { Popover } from 'react-bootstrap'
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
-import { useRef, useState } from 'react'
+import { PreviewCard } from '@base-ui/react/preview-card'
+import { PopoverBody, popoverStyles, popupClasses } from '@/components/ui/popover'
 
 export default function HoverablePopover ({ trigger, body, onShow }) {
-  const [show, setShow] = useState(false)
-  const popRef = useRef(null)
-  const timeoutId = useRef(null)
-
-  const onToggle = show => {
-    clearTimeout(timeoutId.current)
-    if (show) {
-      onShow?.()
-      timeoutId.current = setTimeout(() => setShow(true), 500)
-    } else {
-      timeoutId.current = setTimeout(() => setShow(!!popRef.current?.matches(':hover')), 300)
-    }
-  }
-
   return (
-    <OverlayTrigger
-      placement='bottom'
-      trigger={['hover', 'focus']}
-      show={show}
-      onToggle={onToggle}
-      transition
-      rootClose
-      overlay={
-        <Popover style={{ position: 'fixed' }} onPointerLeave={() => onToggle(false)}>
-          <Popover.Body ref={popRef}>
-            {body}
-          </Popover.Body>
-        </Popover>
-      }
-    >
-      <span>
+    <PreviewCard.Root>
+      {/* onShow fires at hover start (not open) so lazy queries prefetch
+          during the 500ms delay window, exactly as the old onToggle did */}
+      <PreviewCard.Trigger
+        delay={500}
+        closeDelay={300}
+        render={<span onPointerEnter={onShow} onFocus={onShow} />}
+      >
         {trigger}
-      </span>
-    </OverlayTrigger>
+      </PreviewCard.Trigger>
+      <PreviewCard.Portal>
+        <PreviewCard.Positioner side='bottom' sideOffset={8} className={popoverStyles.positioner}>
+          <PreviewCard.Popup className={popupClasses()}>
+            <PreviewCard.Arrow className={popoverStyles.arrow} />
+            <PopoverBody>
+              {body}
+            </PopoverBody>
+          </PreviewCard.Popup>
+        </PreviewCard.Positioner>
+      </PreviewCard.Portal>
+    </PreviewCard.Root>
   )
 }
