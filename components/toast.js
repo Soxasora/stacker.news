@@ -1,9 +1,7 @@
 import { useRouter } from 'next/router'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import Button from '@/components/ui/button'
-import Toast from 'react-bootstrap/Toast'
-import ToastBody from 'react-bootstrap/ToastBody'
-import ToastContainer from 'react-bootstrap/ToastContainer'
+import { cn } from '@/lib/cn'
 import styles from './toast.module.css'
 
 const ToastContext = createContext(() => {})
@@ -14,6 +12,45 @@ const mapHidden = ({ id, tag }) => toast => {
   // mark every previous toast with same tag as hidden
   if (toast.tag === tag && toast.id !== id) return { ...toast, hidden: true }
   return toast
+}
+
+// render layer only (deviation D2): plain divs, role='status'; the state
+// machine below is byte-for-byte the react-bootstrap-era one. Autohide is a
+// plain mount-scoped timer — merged "(N) msg" toasts remount under the new
+// toast's id, which restarts it exactly like rb's remounting Toast did.
+function ToastView ({ toast, onCloseClick, onAutohide }) {
+  useEffect(() => {
+    if (!toast.autohide) return
+    const timeout = setTimeout(onAutohide, toast.delay)
+    return () => clearTimeout(timeout)
+  }, []) // mount-only on purpose: one timer per toast instance, like rb's Toast
+
+  const textStyle = toast.variant === 'warning' ? 'text-black' : ''
+  // a toast is unhidden if it was hidden before since it now gets rendered
+  const unhidden = toast.hidden
+  // we only need to start the animation at a different timing when it was hidden by another toast before.
+  // if we don't do this, the animation for rerendered toasts skips ahead and toast delay and animation get out of sync.
+  const elapsed = (+new Date() - toast.createdAt)
+  const animationDelay = unhidden ? `-${elapsed}ms` : undefined
+  const animationDuration = `${toast.delay}ms`
+
+  return (
+    <div role='status' className={cn(styles.toast, styles[toast.variant], textStyle, 'rounded-md')}>
+      <div className='py-3 px-5 wrap-break-word'>
+        <div className='flex items-center'>
+          <div className='grow overflow-hidden'>{toast.body}</div>
+          <Button
+            variant={null}
+            className='p-0 ps-2'
+            aria-label='close'
+            onClick={onCloseClick}
+          ><div className={`${styles.toastClose} ${textStyle}`}>X</div>
+          </Button>
+        </div>
+      </div>
+      {toast.progressBar && <div className={`${styles.progressBar} ${styles[toast.variant]}`} style={{ animationDuration, animationDelay }} />}
+    </div>
+  )
 }
 
 export const ToastProvider = ({ children }) => {
@@ -118,42 +155,19 @@ export const ToastProvider = ({ children }) => {
 
   return (
     <ToastContext.Provider value={toaster}>
-      <ToastContainer className={`pb-4 px-4 ${styles.toastContainer}`} position='bottom-end' containerPosition='fixed'>
-        {visibleToasts.map(toast => {
-          const textStyle = toast.variant === 'warning' ? 'text-dark' : ''
-          const onClose = () => {
-            toast.onClose?.()
-            removeToast(toast)
-          }
-          // a toast is unhidden if it was hidden before since it now gets rendered
-          const unhidden = toast.hidden
-          // we only need to start the animation at a different timing when it was hidden by another toast before.
-          // if we don't do this, the animation for rerendered toasts skips ahead and toast delay and animation get out of sync.
-          const elapsed = (+new Date() - toast.createdAt)
-          const animationDelay = unhidden ? `-${elapsed}ms` : undefined
-          const animationDuration = `${toast.delay}ms`
-          return (
-            <Toast
-              key={toast.id} bg={toast.variant} show autohide={toast.autohide}
-              delay={toast.delay} className={`${styles.toast} ${styles[toast.variant]} ${textStyle}`} onClose={() => removeToast(toast)}
-            >
-              <ToastBody>
-                <div className='flex items-center'>
-                  <div className='grow overflow-hidden'>{toast.body}</div>
-                  <Button
-                    variant={null}
-                    className='p-0 ps-2'
-                    aria-label='close'
-                    onClick={onClose}
-                  ><div className={`${styles.toastClose} ${textStyle}`}>X</div>
-                  </Button>
-                </div>
-              </ToastBody>
-              {toast.progressBar && <div className={`${styles.progressBar} ${styles[toast.variant]}`} style={{ animationDuration, animationDelay }} />}
-            </Toast>
-          )
-        })}
-      </ToastContainer>
+      <div className={`pb-4 px-4 ${styles.toastContainer}`}>
+        {visibleToasts.map(toast => (
+          <ToastView
+            key={toast.id}
+            toast={toast}
+            onAutohide={() => removeToast(toast)}
+            onCloseClick={() => {
+              toast.onClose?.()
+              removeToast(toast)
+            }}
+          />
+        ))}
+      </div>
       {children}
     </ToastContext.Provider>
   )
