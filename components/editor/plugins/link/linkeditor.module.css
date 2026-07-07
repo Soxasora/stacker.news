@@ -1,18 +1,14 @@
-.linkEditorContainer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 600;
-  max-width: 100%;
-  opacity: 0;
-  box-shadow: 0 0 8px 0 rgba(0, 0, 0, var(--theme-floating-toolbar-shadow-opacity));
-  will-change: transform;
-  border-radius: 0.4rem;
-  background-color: var(--theme-forceCommentBg);
+/* C8c: Base UI Popover positions the popup — the old absolute/rAF
+   positioning rules (and the opacity-until-positioned hack) are gone */
+.positioner {
+  z-index: var(--sn-z-dropdown);
 }
 
-.linkEditorContainer:hover {
-  opacity: 1;
+.linkEditorContainer {
+  max-width: 100%;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, var(--theme-floating-toolbar-shadow-opacity));
+  border-radius: 0.4rem;
+  background-color: var(--theme-forceCommentBg);
 }
 
 .linkEditor {

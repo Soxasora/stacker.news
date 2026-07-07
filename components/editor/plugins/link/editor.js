@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { Popover } from '@base-ui/react/popover'
 import { $findMatchingParent, mergeRegister } from '@lexical/utils'
 import { $createLinkNode, $isAutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -10,7 +10,6 @@ import {
 } from 'lexical'
 import Check from '@/svgs/check-line.svg'
 import Pencil from '@/svgs/edit-line.svg'
-import { setFloatingElemPosition } from '@/lib/lexical/utils/position'
 import { getSelectedNode } from '@/lib/lexical/commands/utils'
 import { ensureProtocol } from '@/lib/url'
 import styles from './linkeditor.module.css'
@@ -19,32 +18,24 @@ import CloseIcon from '@/svgs/close-line.svg'
 import UnlinkIcon from '@/svgs/editor/toolbar/inline/link-unlink.svg'
 import { DEFAULT_URL } from '@/lib/lexical/commands/links'
 
-/** how distant the link editor should appear from the link element */
-const LINK_ELEMENT_VERTICAL_OFFSET = 26
-
+// anchored Popover (§6.3, C8c): floating-ui tracks the link element through
+// scroll/resize, killing the old rAF/setFloatingElemPosition machinery
 export default function LinkEditor ({ nodeKey, anchorElem, onDismiss }) {
   const [isLinkEditMode, setIsLinkEditMode] = useState(false)
   const [editor] = useLexicalComposerContext()
-  const floatingRef = useRef(null)
   const inputRef = useRef(null)
   const [linkUrl, setLinkUrl] = useState('')
   const [editedLinkUrl, setEditedLinkUrl] = useState('')
 
-  const hideFloatingElem = useCallback((dismiss = true) => {
-    if (!floatingRef.current) return
-    setFloatingElemPosition({ targetRect: null, floatingElem: floatingRef.current, anchorElem, fade: false })
-    if (dismiss) onDismiss()
-  }, [anchorElem, onDismiss])
-
   const handleCancel = useCallback(() => {
-    hideFloatingElem()
+    onDismiss()
     // don't toggle link if the editor is currently read-only
     // e.g. lexical reconciliation during a markdown-to-rich mode switch
     if (isCurrentlyReadOnlyMode()) return
     if (linkUrl === '' || linkUrl === DEFAULT_URL) {
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)
     }
-  }, [hideFloatingElem, editor, linkUrl])
+  }, [onDismiss, editor, linkUrl])
 
   useEffect(() => {
     if (isLinkEditMode) {
@@ -68,7 +59,6 @@ export default function LinkEditor ({ nodeKey, anchorElem, onDismiss }) {
       setLinkUrl('')
       setEditedLinkUrl('')
       if (isLinkEditMode) setIsLinkEditMode(false)
-      hideFloatingElem(false)
       return
     }
 
@@ -79,25 +69,7 @@ export default function LinkEditor ({ nodeKey, anchorElem, onDismiss }) {
       setEditedLinkUrl('')
       setIsLinkEditMode(true)
     }
-
-    const floatingElem = floatingRef.current
-    if (!floatingElem || !anchorElem) return
-
-    const el = editor.getElementByKey(nodeKey)
-    if (!el) {
-      hideFloatingElem()
-      return
-    }
-    const { top, left, width, height } = el.getBoundingClientRect()
-    setFloatingElemPosition({
-      targetRect: { top: top + LINK_ELEMENT_VERTICAL_OFFSET, left, width, height },
-      floatingElem,
-      anchorElem,
-      verticalGap: 8,
-      horizontalOffset: 0,
-      fade: false
-    })
-  }, [anchorElem, editor, isLinkEditMode, nodeKey, hideFloatingElem])
+  }, [isLinkEditMode, nodeKey])
 
   const handleLinkConfirm = useCallback(() => {
     const value = editedLinkUrl.trim()
@@ -115,23 +87,15 @@ export default function LinkEditor ({ nodeKey, anchorElem, onDismiss }) {
         }
       })
     } else {
-      hideFloatingElem()
+      onDismiss()
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)
     }
     setEditedLinkUrl('')
     setIsLinkEditMode(false)
-  }, [editedLinkUrl, editor, hideFloatingElem])
+  }, [editedLinkUrl, editor, onDismiss])
 
-  const handleBlur = useCallback((event) => {
-    const floatingElem = floatingRef.current
-    if (!floatingElem) return
-
-    if (!event || !floatingElem.contains(event.relatedTarget)) {
-      handleCancel()
-    }
-  }, [handleCancel])
-
-  // editor updates, selection changes, escape key
+  // editor updates, selection changes, escape key (the Lexical handler stays:
+  // the Popover only sees Escape when focus is inside the popup)
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({ editorState }) => {
@@ -148,102 +112,79 @@ export default function LinkEditor ({ nodeKey, anchorElem, onDismiss }) {
     )
   }, [editor, $updateLink, handleCancel])
 
-  // throttled update of position
+  // synchronous initial read so the url state is correct on the same frame
   useEffect(() => {
-    const scrollerElem = anchorElem?.parentElement
-    let rafId = null
-
-    const update = () => {
-      if (rafId !== null) window.cancelAnimationFrame(rafId)
-      rafId = window.requestAnimationFrame(() => {
-        rafId = null
-        editor.getEditorState().read(() => {
-          $updateLink()
-        })
-      })
-    }
-
-    // synchronous initial read so the position is correct on the same frame
     editor.getEditorState().read(() => { $updateLink() })
+  }, [editor, $updateLink])
 
-    window.addEventListener('resize', update)
-    scrollerElem?.addEventListener('scroll', update)
-
-    return () => {
-      if (rafId !== null) window.cancelAnimationFrame(rafId)
-      window.removeEventListener('resize', update)
-      scrollerElem?.removeEventListener('scroll', update)
-    }
-  }, [editor, anchorElem, $updateLink])
-
-  useEffect(() => {
-    const editorElem = floatingRef.current
-    if (!editorElem || !anchorElem) return
-
-    editorElem.addEventListener('focusout', handleBlur)
-    anchorElem.addEventListener('focusout', handleBlur)
-    return () => {
-      editorElem.removeEventListener('focusout', handleBlur)
-      anchorElem.removeEventListener('focusout', handleBlur)
-    }
-  }, [anchorElem, handleBlur])
+  const anchor = useCallback(() => editor.getElementByKey(nodeKey), [editor, nodeKey])
 
   if (!anchorElem) return null
 
-  return createPortal(
-    <div className={styles.linkEditorContainer} ref={floatingRef} data-node-key={nodeKey}>
-      <div className={styles.linkEditor}>
-        {isLinkEditMode
-          ? (
-            <>
-              <input
-                ref={inputRef}
-                className={styles.linkInput}
-                value={editedLinkUrl}
-                placeholder='https://'
-                onChange={(e) => { setEditedLinkUrl(e.target.value) }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleLinkConfirm()
-                  } else if (e.key === 'Escape') {
-                    e.preventDefault()
-                    handleCancel()
-                  }
-                }}
-              />
-              <div className={styles.linkConfirmIcons}>
-                <span className={styles.linkCancelIcon} onMouseDown={(e) => e.preventDefault()} onClick={handleCancel}>
-                  <CloseIcon />
-                </span>
-                <span className={styles.linkConfirmIcon} onMouseDown={(e) => e.preventDefault()} onClick={handleLinkConfirm}>
-                  <Check />
-                </span>
-              </div>
-            </>
-            )
-          : (
-            <>
-              <a
-                className={styles.linkView}
-                href={ensureProtocol(linkUrl)}
-                target='_blank'
-                rel='noreferrer nofollow noopener'
-              >
-                {linkUrl}
-              </a>
-              <div className={styles.linkConfirmIcons}>
-                <span className={styles.linkEditIcon} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditedLinkUrl(linkUrl); setIsLinkEditMode(true) }}>
-                  <Pencil />
-                </span>
-                <span className={styles.linkRemoveIcon} onMouseDown={(e) => e.preventDefault()} onClick={() => editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)}>
-                  <UnlinkIcon />
-                </span>
-              </div>
-            </>
-            )}
-      </div>
-    </div>,
-    anchorElem
+  return (
+    <Popover.Root
+      open
+      modal={false}
+      onOpenChange={open => { if (!open) handleCancel() }}
+    >
+      <Popover.Portal>
+        <Popover.Positioner anchor={anchor} side='bottom' align='start' sideOffset={8} className={styles.positioner}>
+          {/* view mode must NOT steal editor focus; edit mode focuses via the effect above */}
+          <Popover.Popup initialFocus={false} className={styles.linkEditorContainer} data-node-key={nodeKey}>
+            <div className={styles.linkEditor}>
+              {isLinkEditMode
+                ? (
+                  <>
+                    <input
+                      ref={inputRef}
+                      className={styles.linkInput}
+                      value={editedLinkUrl}
+                      placeholder='https://'
+                      onChange={(e) => { setEditedLinkUrl(e.target.value) }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleLinkConfirm()
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault()
+                          handleCancel()
+                        }
+                      }}
+                    />
+                    <div className={styles.linkConfirmIcons}>
+                      <span className={styles.linkCancelIcon} onMouseDown={(e) => e.preventDefault()} onClick={handleCancel}>
+                        <CloseIcon />
+                      </span>
+                      <span className={styles.linkConfirmIcon} onMouseDown={(e) => e.preventDefault()} onClick={handleLinkConfirm}>
+                        <Check />
+                      </span>
+                    </div>
+                  </>
+                  )
+                : (
+                  <>
+                    <a
+                      className={styles.linkView}
+                      href={ensureProtocol(linkUrl)}
+                      target='_blank'
+                      rel='noreferrer nofollow noopener'
+                    >
+                      {linkUrl}
+                    </a>
+                    <div className={styles.linkConfirmIcons}>
+                      <span className={styles.linkEditIcon} onMouseDown={(e) => e.preventDefault()} onClick={() => { setEditedLinkUrl(linkUrl); setIsLinkEditMode(true) }}>
+                        <Pencil />
+                      </span>
+                      <span className={styles.linkRemoveIcon} onMouseDown={(e) => e.preventDefault()} onClick={() => editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)}>
+                        <UnlinkIcon />
+                      </span>
+                    </div>
+                  </>
+                  )}
+            </div>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }

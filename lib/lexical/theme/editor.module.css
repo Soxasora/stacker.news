@@ -96,12 +96,6 @@
   touch-action: manipulation;
 }
 
-.toolbar :global(.dropdown-toggle::after),
-.bottomBar :global(.dropdown-toggle::after),
-.tableCellActionButtonContainer :global(.dropdown-toggle::after) {
-  display: none;
-}
-
 .innerToolbar {
   margin-left: auto;
   display: flex;
@@ -119,11 +113,6 @@
   border-radius: 0.4rem;
   margin: 0 4px;
   opacity: 0.3;
-
-  /* extra space when divider follows a dropdown */
-  :global(.dropdown) + & {
-    margin-left: 1.25rem;
-  }
 }
 
 .toolbarFormatting {
@@ -158,6 +147,11 @@
   opacity: 0.6;
   -webkit-touch-callout: none;
   touch-action: manipulation;
+  /* C8b: toolbar items are real <button>s now (Toolbar.Button/Menu.Trigger) */
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
 }
 
 .toolbarItem:hover {
@@ -187,9 +181,7 @@
   margin-left: 0.25rem;
 }
 
-/* bootstrap dropdown override */
-.toolbarItem .toolbarItemText,
-:global(.dropdown-toggle) .toolbarItemText {
+.toolbarItem .toolbarItemText {
   color: var(--bs-body-color);
 }
 
@@ -212,9 +204,7 @@
   height: 20px;
 }
 
-/* bootstrap dropdown item svg override */
-.toolbar .toolbarInsert svg,
-:global(.dropdown-toggle).toolbarInsert svg {
+.toolbar .toolbarInsert svg {
   fill: var(--bs-body-color);
 }
 
@@ -307,7 +297,8 @@
   flex-wrap: nowrap;
 }
 
-/* editor mode tabs */
+/* editor mode tabs (C8a: Base UI Tabs.Tab — a <button>, so the skin also
+   carries the nav-link colors the rb Nav.Link classes used to supply) */
 .modeTab {
   --tab-border-color: var(--theme-borderColor);
   --tab-bg: var(--theme-inputBg);
@@ -316,14 +307,25 @@
 
   padding: 0.25rem 0.5rem;
   position: relative;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--theme-navLink);
 }
 
-.modeTab:global(.nav-link.active) {
+.modeTab:hover,
+.modeTab:focus-visible {
+  color: var(--theme-navLinkFocus);
+}
+
+.modeTab[data-selected] {
   border: 1px solid var(--tab-border-color);
   border-bottom: 0;
   background-color: var(--tab-bg);
   box-shadow: var(--tab-shadow);
   clip-path: var(--tab-clip);
+  font-weight: bold;
 }
 
 /* non-top-level editor tabs (comments, etc.) */

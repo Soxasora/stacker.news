@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import styles from '@/lib/lexical/theme/editor.module.css'
-import Nav from 'react-bootstrap/Nav'
+import { Tabs } from '@base-ui/react/tabs'
 import { useEditorMode, MARKDOWN_MODE, RICH_MODE } from '@/components/editor/contexts/mode'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { createCommand, COMMAND_PRIORITY_HIGH } from 'lexical'
@@ -51,32 +51,31 @@ export default function ModeSwitchPlugin ({ name }) {
     )
   }, [editor, changeMode, toggleMode, disabledReasons, toaster])
 
-  const handleTabSelect = useCallback((eventKey) => {
-    editor.dispatchCommand(TOGGLE_MODE_COMMAND, eventKey)
+  const handleTabSelect = useCallback((value) => {
+    editor.dispatchCommand(TOGGLE_MODE_COMMAND, value)
   }, [editor])
 
+  // no Tabs.Panel — the editor body is the panel (§6.2). The old
+  // disabled={activeTab} hack is dropped: the command handler no-ops
+  // same-mode selections already.
   return (
-    <Nav variant='tabs' activeKey={isMarkdown ? MARKDOWN_MODE : RICH_MODE} onSelect={handleTabSelect} onMouseDown={(e) => e.preventDefault()}>
-      <Nav.Item>
-        <Nav.Link
+    <Tabs.Root value={isMarkdown ? MARKDOWN_MODE : RICH_MODE} onValueChange={handleTabSelect}>
+      <Tabs.List className='flex' onMouseDown={(e) => e.preventDefault()}>
+        <Tabs.Tab
           className={styles.modeTab}
-          eventKey={MARKDOWN_MODE}
+          value={MARKDOWN_MODE}
           title='markdown'
-          disabled={isMarkdown}
         >
           write
-        </Nav.Link>
-      </Nav.Item>
-      <Nav.Item>
-        <Nav.Link
+        </Tabs.Tab>
+        <Tabs.Tab
           className={styles.modeTab}
-          eventKey={RICH_MODE}
+          value={RICH_MODE}
           title='rich text'
-          disabled={!isMarkdown}
         >
           compose
-        </Nav.Link>
-      </Nav.Item>
-    </Nav>
+        </Tabs.Tab>
+      </Tabs.List>
+    </Tabs.Root>
   )
 }
