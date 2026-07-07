@@ -1,11 +1,15 @@
 import { useEffect } from 'react'
 import { useField } from 'formik'
+import { Slider } from '@base-ui/react/slider'
+import { NumberField } from '@base-ui/react/number-field'
+import styles from './controls.module.css'
 import { controlClasses, FormGroup, FormText, Feedback } from './field'
 import InputGroup from './input-group'
 
-// legacy-shaped until C9b (Base UI Slider + NumberField land there, §6.6).
-// the native range keeps Bootstrap's .form-range paint until then — the
-// class is served by Bootstrap CSS through PR2 and dies with the C9b rewrite
+// Base UI Slider + Number Field (§6.6, C9b). Formik is the single source of
+// truth; both widgets are controlled from field.value and only user events
+// write back (echo-loop risk 3). The ∞ sentinel transfers verbatim: null ⇒
+// thumb pinned one step below min ⇒ ∞ chip instead of the number field.
 export function Range ({
   label, groupClassName, hint, min, max, step = 1, onChange,
   suffix, allOption, labels, ...props
@@ -30,52 +34,55 @@ export function Range ({
         {allOption
           ? <span className='text-muted' style={{ whiteSpace: 'nowrap' }}>- <span style={{ display: 'inline-block', transform: 'scale(1.4)', transformOrigin: 'center' }}>∞</span></span>
           : <small className='text-muted font-mono'>{min}</small>}
-        <input
-          type='range'
-          className='form-range'
-          {...field}
-          {...props}
+        <Slider.Root
           min={sliderMin}
           max={max}
           step={step}
           value={isAll ? sliderMin : field.value}
-          onChange={(e) => {
-            const val = Number(e.target.value)
-            if (allOption && val <= sliderMin) {
+          onValueChange={(v) => {
+            if (allOption && v <= sliderMin) {
               helpers.setValue(null)
             } else {
-              helpers.setValue(val)
+              helpers.setValue(v)
             }
-            onChange && onChange(e)
+            onChange && onChange({ target: { value: v } })
           }}
-        />
+        >
+          <Slider.Control className={styles.sliderControl}>
+            <Slider.Track className={styles.sliderTrack}>
+              <Slider.Indicator className={styles.sliderIndicator} />
+              <Slider.Thumb className={styles.sliderThumb} aria-label={props.name} />
+            </Slider.Track>
+          </Slider.Control>
+        </Slider.Root>
         <small className='text-muted font-mono'>{max}</small>
         <InputGroup className='flex-nowrap' style={{ width: 'auto' }}>
           {isAll
             ? <span className={controlClasses(undefined, 'px-2')} style={{ width: '4rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25em' }}>-<span style={{ display: 'inline-block', transform: 'scale(1.4)', transformOrigin: 'center' }}>∞</span></span>
-            : <input
-                type='number'
+            : (
+              <NumberField.Root
                 min={min}
                 max={max}
                 step={step}
                 value={field.value}
-                className={controlClasses(undefined, 'text-end hide-spinners px-2')}
-                style={{ width: '4rem' }}
-                onChange={(e) => {
-                  const val = Number(e.target.value)
-                  if (!isNaN(val)) {
-                    helpers.setValue(val)
+                // Intl grouping would print 1,000 where the old input printed 1000
+                format={{ useGrouping: false }}
+                onValueChange={(v) => {
+                  if (v != null && !isNaN(v)) {
+                    helpers.setValue(v)
                   }
-                  onChange && onChange(e)
+                  onChange && onChange({ target: { value: v } })
                 }}
-                onBlur={(e) => {
-                  const val = Number(e.target.value)
-                  if (!isNaN(val)) {
-                    helpers.setValue(Math.min(max, Math.max(min, val)))
-                  }
-                  field.onBlur(e)
-                }}
-              />}
+              >
+                <NumberField.Group>
+                  {/* clamp-on-blur is native; a text input, so the old hide-spinners hack died */}
+                  <NumberField.Input
+                    className={controlClasses(undefined, 'text-end px-2')}
+                    style={{ width: '4rem' }}
+                  />
+                </NumberField.Group>
+              </NumberField.Root>
+              )}
           {suffix && <InputGroup.Text>{suffix.trim()}</InputGroup.Text>}
         </InputGroup>
         {labels?.length > 0 && (

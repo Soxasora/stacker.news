@@ -1,113 +1,43 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { useField, useFormikContext } from 'formik'
-import { FormGroup, Feedback } from './field'
-import InputGroup from './input-group'
-import { InputInner } from './input'
+import { OTPField } from '@base-ui/react/otp-field'
+import { cn } from '@/lib/cn'
+import { controlClasses, FormGroup, Feedback } from './field'
 
-// legacy-shaped until C9b (Base UI OTP Field lands there)
+// Base UI OTP Field (C9b) — replaces ~80 lines of hand-rolled paste/backspace/
+// arrow focus bookkeeping. Public API preserved (sole consumer: pages/email.js).
+// autoSubmit stays OFF (parity, §9). `charLength`/`showSequence` are accepted
+// for API compatibility; OTP boxes are single-character and unnumbered.
 export function MultiInput ({
   name, label, groupClassName, length = 4, charLength = 1, upperCase, showSequence,
   onChange, autoFocus, hideError, inputType = 'text',
   ...props
 }) {
   const formik = useFormikContext()
-  const [inputs, setInputs] = useState(new Array(length).fill(''))
-  const inputRefs = useRef(new Array(length).fill(null))
-  const [, meta, helpers] = useField({ name })
-
-  useEffect(() => {
-    autoFocus && inputRefs.current[0].focus() // focus the first input if autoFocus is true
-  }, [autoFocus])
-
-  const updateInputs = useCallback((newInputs) => {
-    setInputs(newInputs)
-    const combinedValue = newInputs.join('') // join the inputs to get the value
-    helpers.setValue(combinedValue) // set the value to the formik field
-    onChange?.(combinedValue)
-  }, [onChange, helpers])
-
-  const handleChange = useCallback((formik, e, index) => { // formik is not used but it's required to get the value
-    const value = e.target.value.slice(-charLength)
-    const processedValue = upperCase ? value.toUpperCase() : value // convert the input to uppercase if upperCase is tru
-
-    const newInputs = [...inputs]
-    newInputs[index] = processedValue
-    updateInputs(newInputs)
-
-    // focus the next input if the current input is filled
-    if (processedValue.length === charLength && index < length - 1) {
-      inputRefs.current[index + 1].focus()
-    }
-  }, [inputs, charLength, upperCase, onChange, length])
-
-  const handlePaste = useCallback((e) => {
-    e.preventDefault()
-    const pastedValues = e.clipboardData.getData('text').slice(0, length)
-    const processedValues = upperCase ? pastedValues.toUpperCase() : pastedValues
-    const chars = processedValues.split('')
-
-    const newInputs = [...inputs]
-    chars.forEach((char, i) => {
-      newInputs[i] = char.slice(0, charLength)
-    })
-
-    updateInputs(newInputs)
-    inputRefs.current[length - 1]?.focus() // simulating the paste by focusing the last input
-  }, [inputs, length, charLength, upperCase, updateInputs])
-
-  const handleKeyDown = useCallback((e, index) => {
-    switch (e.key) {
-      case 'Backspace': {
-        e.preventDefault()
-        const newInputs = [...inputs]
-        // if current input is empty move focus to the previous input else clear the current input
-        const targetIndex = inputs[index] === '' && index > 0 ? index - 1 : index
-        newInputs[targetIndex] = ''
-        updateInputs(newInputs)
-        inputRefs.current[targetIndex]?.focus()
-        break
-      }
-      case 'ArrowLeft': {
-        if (index > 0) { // focus the previous input if it's not the first input
-          e.preventDefault()
-          inputRefs.current[index - 1]?.focus()
-        }
-        break
-      }
-      case 'ArrowRight': {
-        if (index < length - 1) { // focus the next input if it's not the last input
-          e.preventDefault()
-          inputRefs.current[index + 1]?.focus()
-        }
-        break
-      }
-    }
-  }, [inputs, length, updateInputs])
+  const [field, meta, helpers] = useField({ name })
 
   return (
     <FormGroup label={label} className={groupClassName}>
-      <div className='flex flex-row justify-center gap-2'>
-        {inputs.map((value, index) => (
-          <InputInner
-            inputGroupClassName='w-auto'
-            name={name}
+      <OTPField.Root
+        length={length}
+        value={field.value || ''}
+        validationType={inputType === 'number' ? 'numeric' : 'alphanumeric'}
+        normalizeValue={upperCase ? v => v.toUpperCase() : undefined}
+        onValueChange={(value) => {
+          helpers.setValue(value)
+          onChange?.(value)
+        }}
+        className='flex flex-row justify-center gap-2'
+        {...props}
+      >
+        {Array.from({ length }, (_, index) => (
+          <OTPField.Input
             key={index}
-            type={inputType}
-            value={value}
-            innerRef={(el) => { inputRefs.current[index] = el }}
-            onChange={(formik, e) => handleChange(formik, e, index)}
-            onKeyDown={e => handleKeyDown(e, index)}
-            onPaste={e => handlePaste(e, index)}
-            style={{
-              textAlign: 'center',
-              maxWidth: `${charLength * 44}px` // adjusts the max width of the input based on the charLength
-            }}
-            prepend={showSequence && <InputGroup.Text>{index + 1}</InputGroup.Text>} // show the index of the input
-            hideError
-            {...props}
+            autoFocus={autoFocus && index === 0}
+            className={cn(controlClasses(), 'text-center w-11 grow-0')}
+            aria-label={`character ${index + 1} of ${length}`}
           />
         ))}
-      </div>
+      </OTPField.Root>
       <div>
         {hideError && formik.submitCount > 0 && meta.touched && meta.error && ( // custom error message is showed if hideError is true
           <Feedback className='block'>

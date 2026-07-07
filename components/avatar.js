@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import AvatarEditor from 'react-avatar-editor'
+import { Slider } from '@base-ui/react/slider'
+import controls from '@/components/form/controls.module.css'
 import Button from '@/components/ui/button'
 import EditImage from '@/svgs/image-edit-fill.svg'
 import Moon from '@/svgs/moon-fill.svg'
@@ -35,12 +37,18 @@ export default function Avatar ({ onSuccess }) {
           }}
         />
         <div className='mb-4'>
-          <input
-            type='range' className='form-range'
-            onChange={e => setScale(parseFloat(e.target.value))}
-            min={1} max={2} step='0.05'
-            // defaultValue={scale}
-          />
+          <Slider.Root
+            min={1} max={2} step={0.05}
+            value={scale}
+            onValueChange={v => setScale(v)}
+          >
+            <Slider.Control className={controls.sliderControl}>
+              <Slider.Track className={controls.sliderTrack}>
+                <Slider.Indicator className={controls.sliderIndicator} />
+                <Slider.Thumb className={controls.sliderThumb} aria-label='zoom' />
+              </Slider.Track>
+            </Slider.Control>
+          </Slider.Root>
         </div>
         <Button
           onClick={async () => {
