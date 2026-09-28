@@ -20,6 +20,7 @@ import ClockCounterWiseIcon from '@/svgs/clock-counter-wise.svg'
 import Moon from '@/svgs/moon-fill.svg'
 import { BROWSE } from './search-mocks'
 import styles from './search.module.css'
+import { PUBLIC_MEDIA_URL } from '@/lib/constants'
 
 const MIN_QUERY = 2
 const MAX_QUERY = 100 // same as searchSchema
@@ -47,6 +48,7 @@ function splitQuery (q) {
 function toSearchGroups (data, territory) {
   const posts = (data.search?.items ?? []).map(item => ({
     value: `/items/${item.id}`,
+    type: 'post',
     label: item.title,
     title: item.searchTitle ? <SearchTitle title={item.searchTitle} /> : item.title,
     meta: [
@@ -57,7 +59,9 @@ function toSearchGroups (data, territory) {
   }))
   const stackers = (data.searchUsers ?? []).map(user => ({
     value: `/${user.name}`,
+    type: 'stacker',
     label: `@${user.name}`,
+    photoId: user.photoId,
     meta: user.optional?.stacked != null ? `${abbrNum(user.optional.stacked)} stacked` : ''
   }))
   // territory post counts need a time range, so we only show the name
@@ -78,7 +82,7 @@ function toSearchGroups (data, territory) {
 const keepFocus = event => event.preventDefault()
 
 function LabelControl ({ onClick, children }) {
-  return <button type='button' className='font-normal' onMouseDown={keepFocus} onClick={onClick}>{children}</button>
+  return <button type='button' className='ms-auto font-normal' onMouseDown={keepFocus} onClick={onClick}>{children}</button>
 }
 
 function Kbd ({ children }) {
@@ -97,9 +101,13 @@ function RowContent ({ item }) {
   )
 }
 
+const userPhotoSrc = user => user.photoId ? `${PUBLIC_MEDIA_URL}/${user.photoId}` : '/dorian400.jpg'
+
 function Row ({ item, sub, onPick }) {
   const recent = item.type === 'recent'
   const territory = item.type === 'territory'
+  const user = item.type === 'stacker'
+
   return (
     <AutocompleteItem
       value={item}
@@ -109,6 +117,7 @@ function Row ({ item, sub, onPick }) {
       className={cn(item.muted && 'opacity-50', recent && 'items-center', territory && 'px-0', territory && item.name === sub && 'font-bold')}
     >
       {recent && <ClockCounterWiseIcon width={16} height={16} className='text-muted' aria-hidden />}
+      {user && <img src={userPhotoSrc(item)} width={16} height={16} className={cn(styles.userimg, 'shrink-0 self-center')} />}
       {territory
         ? (
           <SubPreviewCard sub={item.name} side='right' className='flex flex-col gap-2 grow min-w-0 px-3'>
@@ -141,15 +150,17 @@ export default function SearchBar ({ className, sub }) {
   const { nym, territory, text } = splitQuery(query)
   const userQ = nym ?? text
   const subQ = territory ?? text
+  const skipPosts = !query
+  const skipNames = !userQ && !subQ
   // no-cache so these results don't end up in the search and stackers page caches
   const posts = useQuery(NAV_SEARCH_POSTS, {
     variables: { q: query, limit: LIMIT },
-    skip: !query,
+    skip: skipPosts,
     fetchPolicy: 'no-cache'
   })
   const names = useQuery(NAV_SEARCH_NAMES, {
     variables: { userQ, withUsers: !!userQ, subQ, withSubs: !!subQ, limit: LIMIT },
-    skip: !userQ && !subQ,
+    skip: skipNames,
     fetchPolicy: 'no-cache'
   })
 
@@ -157,8 +168,8 @@ export default function SearchBar ({ className, sub }) {
   // too short to search, show recent searches and territories instead
   const browsing = !typed
   // keep showing the last results while the next ones load
-  const postData = query ? (posts.data ?? posts.previousData) : undefined
-  const nameData = userQ || subQ ? (names.data ?? names.previousData) : undefined
+  const postData = skipPosts ? undefined : (posts.data ?? posts.previousData)
+  const nameData = skipNames ? undefined : (names.data ?? names.previousData)
   const searchGroups = useMemo(() => toSearchGroups({ ...postData, ...nameData }, territory), [postData, nameData, territory])
   const groups = browsing ? BROWSE : searchGroups
 
@@ -174,10 +185,12 @@ export default function SearchBar ({ className, sub }) {
 
   // rows are links and handle navigation, we just close and reset
   const onPick = useCallback(() => {
+    // or a pending debounce brings the old query back
+    updateQuery.cancel()
     setOpen(false)
     setValue('')
     setQuery('')
-  }, [])
+  }, [updateQuery])
 
   return (
     <Form onSubmit={values => console.log(values)}>
@@ -192,10 +205,13 @@ export default function SearchBar ({ className, sub }) {
       >
         <div ref={barRef} className={cn(styles.bar, 'relative grow min-w-0 flex items-center gap-2 px-2 rounded-md', className)}>
           <Autocomplete.Input name='q' placeholder='search whatever' className={cn(styles.input, 'grow min-w-0 text-base py-0.5')} />
-          <span aria-hidden className={cn(styles.divider, 'shrink-0 w-px h-4', !value && 'invisible')} />
-          <Autocomplete.Clear keepMounted aria-label='clear search' className={cn(styles.clear, 'shrink-0 flex')}>
-            <CloseIcon width={14} height={14} />
-          </Autocomplete.Clear>
+          {/* hidden instead of removed so the bar doesn't jump */}
+          <span className={cn('shrink-0 flex items-center gap-2', !value && 'invisible')}>
+            <span aria-hidden className={cn(styles.divider, 'w-px h-4')} />
+            <Autocomplete.Clear keepMounted aria-label='clear search' className={cn(styles.clear, 'flex')}>
+              <CloseIcon width={14} height={14} />
+            </Autocomplete.Clear>
+          </span>
           <button type='submit' aria-label='search' className={cn(styles.submit, 'shrink-0 flex')} onMouseDown={keepFocus}>
             <SearchIcon width={16} height={16} aria-hidden />
           </button>
@@ -214,9 +230,9 @@ export default function SearchBar ({ className, sub }) {
               <Autocomplete.Group key={group.value} items={group.items}>
                 {index > 0 && <AutocompleteSeparator invisible />}
                 {group.label && (
-                  <AutocompleteGroupLabel className='flex items-center justify-between gap-2'>
+                  <AutocompleteGroupLabel className='flex items-center gap-2'>
                     {group.label}
-                    {groupPending[group.value] && <Moon className='spin shrink-0 me-auto' width={12} height={12} aria-hidden />}
+                    {groupPending[group.value] && <Moon className='spin shrink-0' width={12} height={12} aria-hidden />}
                     {group.value === 'recent' && <LabelControl onClick={() => console.log('clear')}>clear</LabelControl>}
                     {group.toggle && (
                       <LabelControl onClick={() => console.log('toggle')}>

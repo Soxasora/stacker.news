@@ -27,6 +27,7 @@ export const NAV_SEARCH_NAMES = gql`
   query navSearchNames($userQ: String!, $withUsers: Boolean!, $subQ: String!, $withSubs: Boolean!, $limit: Limit) {
     searchUsers(q: $userQ, limit: $limit) @include(if: $withUsers) {
       name
+      photoId
       optional {
         stacked
       }

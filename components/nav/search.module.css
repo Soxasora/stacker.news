@@ -27,11 +27,6 @@
   color: var(--sn-grey);
 }
 
-/* hidden instead of removed so the bar doesn't jump */
-.clear:not([data-visible]) {
-  visibility: hidden;
-}
-
 .submit {
   color: var(--sn-nav-link);
 }
@@ -56,6 +51,11 @@
 .footer {
   background-color: var(--sn-comment-bg);
   border-top: 1px solid var(--sn-toolbar-active);
+}
+
+.userimg {
+  clip-path: polygon(0% 0%, 83% 0%, 100% 100%, 17% 100%);
+  object-fit: cover;
 }
 
 }
