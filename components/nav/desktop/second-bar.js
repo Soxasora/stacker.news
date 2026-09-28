@@ -1,12 +1,9 @@
 import { Nav, Navbar } from '@/components/ui/nav'
-import { NavSelect, PostItem, Sorts, hasNavSelect } from '../common'
+import { PostItem, Sorts, hasNavSelect } from '../common'
 import styles from '../../header.module.css'
-import { useBranding } from '../../territory-branding'
-import classNames from 'classnames'
 
 export default function SecondBar (props) {
-  const { prefix, topNavKey, sub } = props
-  const branding = useBranding()
+  const { prefix, topNavKey } = props
   if (!hasNavSelect(props)) return null
   return (
     <Navbar className='not-first:pt-0'>
@@ -14,9 +11,8 @@ export default function SecondBar (props) {
         className={styles.navbarNav}
         activeKey={topNavKey}
       >
-        {!branding && <NavSelect sub={sub} size='medium' className='me-1' />}
-        <div className={classNames('flex', !branding && 'ms-2')}>
-          <Sorts {...props} className={!branding ? 'ms-1' : undefined} />
+        <div className='flex'>
+          <Sorts {...props} className='-mx-2 me-3' />
         </div>
         <PostItem className='ms-auto me-0 flex' prefix={prefix} />
       </Nav>

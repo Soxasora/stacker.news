@@ -841,7 +841,7 @@ export default {
       }
     },
 
-    search: async (parent, { q, cursor, sort, what, when, from: whenFrom, to: whenTo }, { me, models, search, userLoader }) => {
+    search: async (parent, { q, cursor, sort, what, when, from: whenFrom, to: whenTo, limit }, { me, models, search, userLoader }) => {
       await validateSchema(searchSchema, { q })
       const decodedCursor = decodeCursor(cursor)
 
@@ -901,7 +901,7 @@ export default {
       try {
         sitems = await search.search({
           index: process.env.OPENSEARCH_INDEX,
-          size: LIMIT,
+          size: limit,
           _source: { excludes: OS_SOURCE_EXCLUDES },
           from: decodedCursor.offset,
           body: {
@@ -993,7 +993,7 @@ export default {
       )
 
       return {
-        cursor: items.length === LIMIT ? nextCursorEncoded(decodedCursor) : null,
+        cursor: items.length === limit ? nextCursorEncoded(decodedCursor, limit) : null,
         items,
         searchSuggestion
       }

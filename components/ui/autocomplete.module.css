@@ -1,0 +1,28 @@
+@layer components {
+
+.item {
+  color: var(--sn-body-color);
+  cursor: pointer;
+  outline: 0;
+}
+
+/* hover and keyboard both set data-highlighted */
+.item[data-highlighted] {
+  background-color: var(--sn-toolbar-active);
+  border-radius: var(--sn-border-radius, .375rem);
+}
+
+.separator {
+  border-top: 1px solid var(--sn-toolbar-active);
+}
+
+.tile {
+  border: 1px solid var(--sn-toolbar-active);
+  border-radius: var(--sn-border-radius, .375rem);
+}
+
+.tile[data-highlighted] {
+  border-color: var(--sn-border-color-translucent);
+}
+
+}
