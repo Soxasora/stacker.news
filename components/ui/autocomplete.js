@@ -28,9 +28,12 @@ export function AutocompleteGroupLabel ({ className, ...props }) {
   return <BaseAutocomplete.GroupLabel className={cn('px-3 pt-1.5 pb-0.5 text-xs text-muted font-bold', className)} {...props} />
 }
 
+export const autocompleteItemClasses = ({ className } = {}) =>
+  cn(styles.item, 'flex items-baseline gap-2 py-1 px-3 mx-1 mt-0.5 rounded-md', className)
+
 // label on the left, meta on the right
 export function AutocompleteItem ({ className, ...props }) {
-  return <BaseAutocomplete.Item className={cn(styles.item, 'flex items-baseline gap-2 py-1 px-3 mx-1 mt-0.5 rounded-md', className)} {...props} />
+  return <BaseAutocomplete.Item className={autocompleteItemClasses({ className })} {...props} />
 }
 
 // invisible: spacing only, no line

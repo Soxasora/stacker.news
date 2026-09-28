@@ -107,7 +107,7 @@ function Row ({ item, sub, onPick }) {
   const recent = item.type === 'recent'
   const territory = item.type === 'territory'
   const user = item.type === 'stacker'
-
+  const search = item.type === 'search'
   return (
     <AutocompleteItem
       value={item}
@@ -118,6 +118,7 @@ function Row ({ item, sub, onPick }) {
     >
       {recent && <ClockCounterWiseIcon width={16} height={16} className='text-muted' aria-hidden />}
       {user && <img src={userPhotoSrc(item)} width={16} height={16} className={cn(styles.userimg, 'shrink-0 self-center')} />}
+      {search && <SearchIcon width={16} height={16} className='text-muted shrink-0 self-center' aria-hidden />}
       {territory
         ? (
           <SubPreviewCard sub={item.name} side='right' className='flex flex-col gap-2 grow min-w-0 px-3'>
@@ -171,7 +172,18 @@ export default function SearchBar ({ className, sub }) {
   const postData = skipPosts ? undefined : (posts.data ?? posts.previousData)
   const nameData = skipNames ? undefined : (names.data ?? names.previousData)
   const searchGroups = useMemo(() => toSearchGroups({ ...postData, ...nameData }, territory), [postData, nameData, territory])
-  const groups = browsing ? BROWSE : searchGroups
+  const searchRows = useMemo(() => {
+    if (!typed) return []
+    const q = encodeURIComponent(typed)
+    return [
+      sub && { value: `/~${sub}/search?q=${q}`, type: 'search', label: `search ${typed} in ~${sub}`, title: <>search <b>{typed}</b> in ~{sub}</> },
+      { value: `/search?q=${q}`, type: 'search', label: `search ${typed} everywhere`, title: <>search <b>{typed}</b> everywhere</> }
+    ].filter(Boolean)
+  }, [typed, sub])
+
+  const groups = browsing
+    ? BROWSE
+    : [{ value: 'search', items: searchRows }, ...searchGroups]
 
   // count the debounce wait as loading too, so the popup doesn't open with only the footer
   const debouncing = query !== typed
@@ -195,6 +207,8 @@ export default function SearchBar ({ className, sub }) {
   return (
     <Form onSubmit={values => console.log(values)}>
       <Autocomplete.Root
+        autoHighlight
+        keepHighlight
         items={groups}
         value={value}
         onValueChange={onValueChange}
@@ -204,6 +218,17 @@ export default function SearchBar ({ className, sub }) {
         mode='none' // disables base ui filtering
       >
         <div ref={barRef} className={cn(styles.bar, 'relative grow min-w-0 flex items-center gap-2 px-2 rounded-md', className)}>
+          {sub && (
+            <>
+              <Autocomplete.Trigger
+                aria-label='territory'
+                className={cn(styles.scope, 'flex items-center gap-1 shrink-0 pl-0 min-w-0 max-w-40 rounded-md border-0 font-bold text-start')}
+              >
+                <span className='grow truncate'>{sub}</span>
+              </Autocomplete.Trigger>
+              <span aria-hidden className={cn(styles.divider, 'w-px h-4')} />
+            </>
+          )}
           <Autocomplete.Input name='q' placeholder='search whatever' className={cn(styles.input, 'grow min-w-0 text-base py-0.5')} />
           {/* hidden instead of removed so the bar doesn't jump */}
           <span className={cn('shrink-0 flex items-center gap-2', !value && 'invisible')}>
