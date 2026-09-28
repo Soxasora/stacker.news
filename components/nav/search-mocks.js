@@ -1,8 +1,6 @@
-// mock groups for the search bar's dropdown, one export per state of the design
-// and in the shape the list renders, so any of them can be passed as items.
-// value is the row's link, title/label its text, meta its trailing column; the
-// other fields are the raw values behind them, for whatever the design needs.
-// delete once the groups are real
+// mock groups for each state of the dropdown, same shape as toSearchGroups in
+// search.js, so any of them can be passed as items. fields the list doesn't use
+// are the raw data behind a row. delete once the groups are real
 
 // empty bar
 export const BROWSE = [
@@ -62,8 +60,8 @@ export const STACKERS = [
   }
 ]
 
-// typing lightning: the row that runs the search, then what it would find.
-// searchTitle is the title as the search resolver marks it, for <SearchTitle>
+// typing lightning: a row that runs the search, then the posts it would find.
+// searchTitle is the title with matches marked by the search resolver, for <SearchTitle>
 export const SEARCH = [
   {
     value: 'search',
@@ -84,7 +82,7 @@ export const SEARCH = [
   }
 ]
 
-// typing zapathon under a ~meta token: nothing there, one row to widen the search
+// typing zapathon with ~meta: no results there, one row to search everywhere
 export const SEARCH_ELSEWHERE = [
   {
     value: 'search',
@@ -95,7 +93,7 @@ export const SEARCH_ELSEWHERE = [
   }
 ]
 
-// what the empty part says when a state has no rows at all
+// text shown when a state has no rows
 export const NOTHING = {
   territories: 'no territory called ~zzz',
   stackers: 'no stacker called @zzz',

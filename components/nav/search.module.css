@@ -1,76 +1,61 @@
 @layer components {
-  .bar {
-    background-color: var(--sn-click-to-context-color);
-    border-radius: var(--sn-input-radius, .375rem);
-    color: var(--sn-body-color);
-    border: 1px solid transparent;
-    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-  }
-  
-  .bar:focus-within {
-    background-color: var(--sn-input-bg);
-    border: 1px solid var(--sn-primary);
-    box-shadow: var(--sn-focus-ring);
-    transition: none;
-  }
-  
-  /* remove maybe */
-  @media (prefers-reduced-motion: reduce) {
-    .bar {
-      transition: none;
-    }
-  }
 
-  .input {
-    background: transparent;
-    border: 0;
-    outline: 0;
-    color: inherit;
-  }
+.bar {
+  background-color: var(--sn-click-to-context-color);
+  color: var(--sn-body-color);
+  border: 1px solid transparent;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
 
-  .divider {
-    background-color: var(--sn-border-color-translucent);
-  }
+/* no transition on focus, fade out on blur */
+.bar:focus-within {
+  background-color: var(--sn-input-bg);
+  border-color: var(--sn-primary);
+  box-shadow: var(--sn-focus-ring);
+  transition: none;
+}
 
-  .clear {
-    color: var(--sn-grey);
-  }
+.input {
+  outline: 0;
+}
 
-  .clear:not([data-visible]) {
-    visibility: hidden;
-  }
+.divider {
+  background-color: var(--sn-border-color-translucent);
+}
 
-  .submit svg {
-    fill: var(--sn-nav-link);
-  }
-  
-  .bar:focus-within .submit svg,
-  .submit:hover svg {
-    fill: var(--sn-nav-link-active);
-  }
+.clear {
+  color: var(--sn-grey);
+}
 
-  .kbd {
-    padding: 0.15rem;
-    font-size: inherit;
-    color: var(--sn-nav-link);
-    background-color: transparent;
-    border: 1px solid var(--sn-border-color-translucent);
-  }
+/* hidden instead of removed so the bar doesn't jump */
+.clear:not([data-visible]) {
+  visibility: hidden;
+}
 
-  .popup {
-    border: 1px solid var(--sn-border-color-translucent);
-    box-shadow: var(--sn-shadow-lg);
-    background-color: var(--sn-input-bg);
-    color: var(--sn-body-color);
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    max-width: 100%;
-    max-height: 100%;
-  }
+.submit {
+  color: var(--sn-nav-link);
+}
 
-  .footer {
-    border-top: 1px solid var(--sn-toolbar-active);
-    background-color: var(--sn-comment-bg);
-  }
+.submit:hover,
+.bar:focus-within .submit {
+  color: var(--sn-nav-link-active);
+}
+
+.kbd {
+  font-size: inherit;
+  color: var(--sn-nav-link);
+  background-color: transparent;
+  border: 1px solid var(--sn-border-color-translucent);
+}
+
+.popup {
+  background-color: var(--sn-input-bg);
+  border-color: var(--sn-border-color-translucent);
+}
+
+.footer {
+  background-color: var(--sn-comment-bg);
+  border-top: 1px solid var(--sn-toolbar-active);
+}
+
 }

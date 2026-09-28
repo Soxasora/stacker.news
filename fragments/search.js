@@ -1,10 +1,9 @@
 import { gql } from '@apollo/client'
 
-// the nav search dropdown: a handful of posts, stackers and territories per keystroke.
-// posts go through opensearch while the names are plain db lookups, so they are
-// separate queries and the names never wait for the posts
+// nav search dropdown. posts come from opensearch and names from the db, so
+// they're separate queries and names don't wait for posts
 
-// $q is the full query (@nym and ~territory tokens narrow the posts server-side)
+// $q includes @nym and ~territory, the server uses them to filter posts
 export const NAV_SEARCH_POSTS = gql`
   query navSearchPosts($q: String!, $limit: Limit) {
     search(q: $q, what: "posts", limit: $limit) {
@@ -22,9 +21,8 @@ export const NAV_SEARCH_POSTS = gql`
   }
 `
 
-// $userQ and $subQ carry the text the name lookups match on. searchUsers returns
-// whole user rows, so stacked resolves; subSuggestions lists every territory for
-// an empty string, hence the include flag
+// searchUsers because userSuggestions only returns names and we need stacked.
+// the include flags skip empty lookups, subSuggestions returns every territory for ''
 export const NAV_SEARCH_NAMES = gql`
   query navSearchNames($userQ: String!, $withUsers: Boolean!, $subQ: String!, $withSubs: Boolean!, $limit: Limit) {
     searchUsers(q: $userQ, limit: $limit) @include(if: $withUsers) {

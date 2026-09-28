@@ -12,7 +12,7 @@ export default function SecondBar (props) {
         activeKey={topNavKey}
       >
         <div className='flex'>
-          <Sorts {...props} className='-mx-2 me-3' />
+          <Sorts {...props} className='-ms-2 me-3' />
         </div>
         <PostItem className='ms-auto me-0 flex' prefix={prefix} />
       </Nav>
