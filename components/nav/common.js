@@ -7,7 +7,6 @@ import { useRouter } from 'next/router'
 import BackArrow from '../../svgs/arrow-left-line.svg'
 import { useCallback, useEffect, useState } from 'react'
 import Price from '../price'
-import SubSelect from '../sub-select'
 import { PUBLIC_MEDIA_URL, USER_ID } from '../../lib/constants'
 import NoteIcon from '../../svgs/notification-4-fill.svg'
 import { useMe } from '../me'
@@ -40,7 +39,8 @@ export function Brand ({ className }) {
   )
 }
 
-export function hasNavSelect ({ path, pathname }) {
+// territory pages that list items have the sorts in a second bar
+export function hasSorts ({ path, pathname }) {
   return (
     pathname.startsWith('/~') &&
     !path.endsWith('/post') &&
@@ -101,21 +101,6 @@ export function NavPrice ({ className }) {
   return (
     <NavItem className={cn(styles.price, className)}>
       <Price className={navLinkClasses({ className: 'font-mono' })} />
-    </NavItem>
-  )
-}
-
-const PREPEND_SUBS = ['home']
-const APPEND_SUBS = [{ label: '--------', items: ['create'] }]
-export function NavSelect ({ sub: subName, className, size }) {
-  const sub = subName || 'home'
-
-  return (
-    <NavItem className={className}>
-      <SubSelect
-        sub={sub} prependSubs={PREPEND_SUBS} appendSubs={APPEND_SUBS} noForm
-        groupClassName='mb-0' size={size}
-      />
     </NavItem>
   )
 }

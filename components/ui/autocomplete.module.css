@@ -6,8 +6,9 @@
   outline: 0;
 }
 
-/* hover and keyboard both set data-highlighted */
-.item[data-highlighted] {
+/* hover and keyboard both set data-highlighted, a tap only gets :active */
+.item[data-highlighted],
+.item:active {
   background-color: var(--sn-toolbar-active);
 }
 
@@ -19,7 +20,8 @@
   border: 1px solid var(--sn-toolbar-active);
 }
 
-.tile[data-highlighted] {
+.tile[data-highlighted],
+.tile:active {
   border-color: var(--sn-border-color-translucent);
 }
 

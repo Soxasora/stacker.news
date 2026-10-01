@@ -1,10 +1,10 @@
 import { Nav, Navbar } from '@/components/ui/nav'
-import { PostItem, Sorts, hasNavSelect } from '../common'
+import { PostItem, Sorts, hasSorts } from '../common'
 import styles from '../../header.module.css'
 
 export default function SecondBar (props) {
   const { prefix, topNavKey } = props
-  if (!hasNavSelect(props)) return null
+  if (!hasSorts(props)) return null
   return (
     <Navbar className='not-first:pt-0'>
       <Nav

@@ -71,6 +71,19 @@
   padding-right: env(safe-area-inset-right);
 }
 
+/* makes the area that takes taps at least this big without moving anything,
+   hitbox-11 is 44px. for small controls on touch screens: pointer-coarse:hitbox-11.
+   the area sits on top of what's next to the element, so leave room around it */
+@utility hitbox-* {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: min(0px, calc((100% - var(--spacing) * --value(number)) / 2));
+  }
+}
+
 /* px-4 that grows with the safe area */
 @utility px-safe-gutter {
   padding-left: max(1rem, env(safe-area-inset-left));

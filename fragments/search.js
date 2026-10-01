@@ -37,3 +37,16 @@ export const NAV_SEARCH_NAMES = gql`
     }
   }
 `
+
+// the territories with the most posts in the last week, shown before anything
+// is typed when there are no subscriptions to show
+export const NAV_POPULAR_SUBS = gql`
+  query navPopularSubs($limit: Limit) {
+    topSubs(when: "week", by: "items", limit: $limit) {
+      subs {
+        name
+        nitems(when: "week")
+      }
+    }
+  }
+`

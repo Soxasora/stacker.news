@@ -1,12 +1,12 @@
 import { Nav, Navbar } from '@/components/ui/nav'
-import { NavWalletSummary, Sorts, hasNavSelect, SignUpButton } from '../common'
+import { NavWalletSummary, Sorts, hasSorts, SignUpButton } from '../common'
 import styles from '../../header.module.css'
 import { useMe } from '@/components/me'
 
 export default function SecondBar (props) {
   const { me } = useMe()
   const { topNavKey } = props
-  if (!hasNavSelect(props)) return null
+  if (!hasSorts(props)) return null
   return (
     <Navbar className='not-first:pt-0'>
       <Nav

@@ -159,6 +159,18 @@ so inputs and adjacent addons inherit the same value.
 for controls in an input group so their heights align. Keep mobile input text at
 least 1rem to prevent automatic zoom on iOS.
 
+### Touch targets
+
+Controls that can grow use `max-md:min-h-11`. For a small control that must keep
+its size, `pointer-coarse:hitbox-11` makes the area that takes taps at least 44px
+with a pseudo-element, without changing the layout. The number is a spacing step,
+so `hitbox-8` is 32px. The area lies on top of neighbouring elements and takes
+their taps where they overlap, so use a smaller step when controls sit close
+together.
+
+Hover styles don't show on a tap. Give an element that has one the same style
+for `:active`.
+
 ## Transitions
 
 Small popups use short ease-out transitions when opening. Only use exit

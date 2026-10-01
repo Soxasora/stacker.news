@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 
 // the first ~territory and @nym outside quotes filter the search, same as
@@ -24,6 +24,27 @@ export function toSearchQ ({ sub, user } = {}, text = '') {
   return [sub && `~${sub}`, user && `@${user}`, text.trim()].filter(Boolean).join(' ')
 }
 
+const RECENT_SUBS_KEY = 'recentTerritories'
+// more than the bar shows, some may be gone or be the one we're in
+const RECENT_SUBS_MAX = 8
+
+// the names of the territories opened last on this device, newest first
+export function recentSubs () {
+  try {
+    const names = JSON.parse(window.localStorage.getItem(RECENT_SUBS_KEY))
+    return Array.isArray(names) ? names : []
+  } catch {
+    return []
+  }
+}
+
+function rememberSub (name) {
+  try {
+    const names = [name, ...recentSubs().filter(recent => recent !== name)].slice(0, RECENT_SUBS_MAX)
+    window.localStorage.setItem(RECENT_SUBS_KEY, JSON.stringify(names))
+  } catch {}
+}
+
 const SearchScopeContext = createContext()
 
 // what the bar shows before anything is typed: the current search on a search
@@ -36,7 +57,13 @@ function usePageSearch (sub, user) {
 
 // the scope and text of the search bar, shared by every bar on the page
 export function SearchScopeProvider ({ sub, user, children }) {
+  const router = useRouter()
   const page = usePageSearch(sub, user)
+  // the territory whose pages we're on. posts also come with a sub, they don't count
+  const pageSub = router.pathname.startsWith('/~') ? sub : undefined
+  useEffect(() => {
+    if (pageSub) rememberSub(pageSub)
+  }, [pageSub])
   const [state, setState] = useState({ page, ...page })
   // start over when the page's search changes
   if (state.page !== page) setState({ page, ...page })
@@ -47,7 +74,7 @@ export function SearchScopeProvider ({ sub, user, children }) {
   const reset = useCallback(() => setState(state => ({ ...state, ...state.page })), [])
 
   const { scope, text } = state
-  const value = useMemo(() => ({ scope, text, setText, setScope, reset }), [scope, text, setText, setScope, reset])
+  const value = useMemo(() => ({ scope, text, pageSub, setText, setScope, reset }), [scope, text, pageSub, setText, setScope, reset])
   return <SearchScopeContext.Provider value={value}>{children}</SearchScopeContext.Provider>
 }
 
