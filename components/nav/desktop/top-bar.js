@@ -5,27 +5,27 @@ import { useCommentsNavigatorContext, CommentsNavigator } from '@/components/use
 import SearchBar from '../search'
 
 // the header and sticky bar wrap this in hidden md:block, so items need no breakpoints
-export function DesktopRow ({ dropNavKey, sub }) {
+export function DesktopRow ({ dropNavKey }) {
   const { navigator, commentCount } = useCommentsNavigatorContext()
   return (
     <>
       <Back />
       <Brand className='me-1' />
-      <SearchBar className='ms-3 min-w-8' sub={sub} />
+      <SearchBar className='ms-3 min-w-8' />
       <CommentsNavigator navigator={navigator} commentCount={commentCount} />
       <RightCorner className='flex w-full justify-end' dropNavKey={dropNavKey} />
     </>
   )
 }
 
-export default function TopBar ({ topNavKey, dropNavKey, sub }) {
+export default function TopBar ({ topNavKey, dropNavKey }) {
   return (
     <Navbar className='not-last:pb-0'>
       <Nav
         className={styles.navbarNav}
         activeKey={topNavKey}
       >
-        <DesktopRow dropNavKey={dropNavKey} sub={sub} />
+        <DesktopRow dropNavKey={dropNavKey} />
       </Nav>
     </Navbar>
   )

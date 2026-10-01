@@ -23,6 +23,10 @@
   background-color: var(--sn-border-color-translucent);
 }
 
+.chip {
+  background-color: var(--sn-toolbar-active);
+}
+
 .clear {
   color: var(--sn-grey);
 }

@@ -188,8 +188,10 @@ async function loadSatsFilters (me, userLoader) {
 // Each returns { filters: [...], queries: [...] } for spreading into
 // the filter and termQuery arrays.
 
-function nymClauses (nym) {
+// exactName is set when a stacker has exactly this nym
+function nymClauses (nym, exactName) {
   if (!nym) return { filters: [], queries: [] }
+  if (exactName) return { filters: [{ term: { 'user.name': exactName } }], queries: [] }
   const name = nym.slice(1).toLowerCase()
   if (!name) return { filters: [], queries: [] } // guard: bare "@" with no name
   const pattern = `*${name}*`
@@ -859,7 +861,12 @@ export default {
       const neuralText = [(spellCorrected || query), ...quotes].filter(Boolean).join(' ').trim().slice(0, MAX_NEURAL_TEXT_LENGTH)
 
       const { postsSatsFilter, commentsSatsFilter } = await loadSatsFilters(me, userLoader)
-      const nymParts = nymClauses(nym)
+      // @nym only matches that stacker when there is one with exactly that name,
+      // otherwise it matches every name that contains it
+      const stacker = nym?.length > 1
+        ? await models.user.findUnique({ where: { name: nym.slice(1) }, select: { name: true } })
+        : null
+      const nymParts = nymClauses(nym, stacker?.name)
       const territoryParts = territoryClauses(territory)
       const quoteParts = quoteClauses(quotes)
 
