@@ -1,6 +1,6 @@
 import { Nav, Navbar } from '@/components/ui/nav'
 import styles from '../../header.module.css'
-import { Back, Brand, NavPrice, RightCorner } from '../common'
+import { Back, Brand, RightCorner } from '../common'
 import { useCommentsNavigatorContext, CommentsNavigator } from '@/components/use-comments-navigator'
 import SearchBar from '../search'
 
@@ -12,9 +12,8 @@ export function DesktopRow ({ dropNavKey, sub }) {
       <Back />
       <Brand className='me-1' />
       <SearchBar className='ms-3 min-w-8' sub={sub} />
-      <NavPrice />
       <CommentsNavigator navigator={navigator} commentCount={commentCount} />
-      <RightCorner dropNavKey={dropNavKey} />
+      <RightCorner className='flex w-full justify-end' dropNavKey={dropNavKey} />
     </>
   )
 }

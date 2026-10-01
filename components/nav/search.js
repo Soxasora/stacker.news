@@ -21,6 +21,7 @@ import Moon from '@/svgs/moon-fill.svg'
 import { BROWSE } from './search-mocks'
 import styles from './search.module.css'
 import { PUBLIC_MEDIA_URL } from '@/lib/constants'
+import ItemPreviewCard from '@/components/item-preview-card'
 
 const MIN_QUERY = 2
 const MAX_QUERY = 100 // same as searchSchema
@@ -49,6 +50,7 @@ function toSearchGroups (data, territory) {
   const posts = (data.search?.items ?? []).map(item => ({
     value: `/items/${item.id}`,
     type: 'post',
+    id: item.id,
     label: item.title,
     title: item.searchTitle ? <SearchTitle title={item.searchTitle} /> : item.title,
     meta: [
@@ -69,13 +71,24 @@ function toSearchGroups (data, territory) {
     value: `/~${sub.name}`,
     type: 'territory',
     name: sub.name,
-    label: `~${sub.name}`
+    label: `~${sub.name}`,
+    meta: numWithUnits(sub.nitems, { unitSingular: 'post', unitPlural: 'posts' })
   }))
   return [
     { value: 'posts', label: territory ? `posts in ~${territory}` : 'posts', items: posts },
     { value: 'stackers', label: 'stackers', items: stackers },
-    { value: 'territories', label: 'territories', items: territories }
+    { value: 'territories', layout: 'tiles', label: 'territories', items: territories }
   ].filter(group => group.items.length > 0)
+}
+
+// keep showing the last results while the next ones load. we don't use Apollo's
+// previousData because it survives skip, so results from before the input was
+// cleared would show up again
+function useLastData (result, skip) {
+  const last = useRef()
+  if (skip) last.current = undefined
+  else if (result.data) last.current = result.data
+  return last.current
 }
 
 // keep focus in the input so the popup stays open
@@ -103,9 +116,9 @@ function RowContent ({ item }) {
 
 const userPhotoSrc = user => user.photoId ? `${PUBLIC_MEDIA_URL}/${user.photoId}` : '/dorian400.jpg'
 
-function Row ({ item, sub, onPick }) {
+function Row ({ item, onPick }) {
   const recent = item.type === 'recent'
-  const territory = item.type === 'territory'
+  const post = item.type === 'post'
   const user = item.type === 'stacker'
   const search = item.type === 'search'
   return (
@@ -113,20 +126,49 @@ function Row ({ item, sub, onPick }) {
       value={item}
       render={<Link href={item.value} />}
       onClick={onPick}
-      // padding goes on the preview card trigger so hovering anywhere on the row opens it
-      className={cn(item.muted && 'opacity-50', recent && 'items-center', territory && 'px-0', territory && item.name === sub && 'font-bold')}
+      className={cn(item.muted && 'opacity-50', recent && 'items-center')}
     >
       {recent && <ClockCounterWiseIcon width={16} height={16} className='text-muted' aria-hidden />}
       {user && <img src={userPhotoSrc(item)} width={16} height={16} className={cn(styles.userimg, 'shrink-0 self-center')} />}
       {search && <SearchIcon width={16} height={16} className='text-muted shrink-0 self-center' aria-hidden />}
-      {territory
+      {post
         ? (
-          <SubPreviewCard sub={item.name} side='right' className='flex flex-col gap-2 grow min-w-0 px-3'>
+          <ItemPreviewCard id={item.id} side='right' className='flex flex-col grow min-w-0'>
             <RowContent item={item} />
-          </SubPreviewCard>
+          </ItemPreviewCard>
           )
         : <RowContent item={item} />}
     </AutocompleteItem>
+  )
+}
+
+function TileContent ({ item }) {
+  return (
+    <>
+      <span className='truncate text-sm font-bold'>{item.label}</span>
+      <span className='text-xs text-muted'>{item.meta}</span>
+    </>
+  )
+}
+
+function Tile ({ item, onPick }) {
+  const territory = item.type === 'territory'
+  return (
+    <AutocompleteTile
+      value={item}
+      render={<Link href={item.value} />}
+      onClick={onPick}
+      // padding goes on the preview card trigger so hovering anywhere on the tile opens it
+      className={cn(territory && 'p-0')}
+    >
+      {territory
+        ? (
+          <SubPreviewCard sub={item.name} className='flex flex-col gap-0.5 min-w-0 py-2.5 px-3'>
+            <TileContent item={item} />
+          </SubPreviewCard>
+          )
+        : <TileContent item={item} />}
+    </AutocompleteTile>
   )
 }
 
@@ -145,7 +187,13 @@ export default function SearchBar ({ className, sub }) {
   const updateQuery = useDebounceCallback(next => setQuery(toQuery(next)), DEBOUNCE_MS)
   const onValueChange = useCallback(next => {
     setValue(next)
-    updateQuery(next)
+    // clear right away, or the old results show up while the next query is debouncing
+    if (!toQuery(next)) {
+      updateQuery.cancel()
+      setQuery('')
+    } else {
+      updateQuery(next)
+    }
   }, [updateQuery])
 
   const { nym, territory, text } = splitQuery(query)
@@ -168,15 +216,14 @@ export default function SearchBar ({ className, sub }) {
   const typed = toQuery(value)
   // too short to search, show recent searches and territories instead
   const browsing = !typed
-  // keep showing the last results while the next ones load
-  const postData = skipPosts ? undefined : (posts.data ?? posts.previousData)
-  const nameData = skipNames ? undefined : (names.data ?? names.previousData)
+  const postData = useLastData(posts, skipPosts)
+  const nameData = useLastData(names, skipNames)
   const searchGroups = useMemo(() => toSearchGroups({ ...postData, ...nameData }, territory), [postData, nameData, territory])
   const searchRows = useMemo(() => {
     if (!typed) return []
     const q = encodeURIComponent(typed)
     return [
-      sub && { value: `/~${sub}/search?q=${q}`, type: 'search', label: `search ${typed} in ~${sub}`, title: <>search <b>{typed}</b> in ~{sub}</> },
+      sub && { value: `/search?q=${encodeURIComponent(`~${sub} ${typed}`)}`, type: 'search', label: `search ${typed} in ~${sub}`, title: <>search <b>{typed}</b> in ~{sub}</> },
       { value: `/search?q=${q}`, type: 'search', label: `search ${typed} everywhere`, title: <>search <b>{typed}</b> everywhere</> }
     ].filter(Boolean)
   }, [typed, sub])
@@ -222,7 +269,8 @@ export default function SearchBar ({ className, sub }) {
             <>
               <Autocomplete.Trigger
                 aria-label='territory'
-                className={cn(styles.scope, 'flex items-center gap-1 shrink-0 pl-0 min-w-0 max-w-40 rounded-md border-0 font-bold text-start')}
+                // about the height of the small select it replaced
+                className='flex items-center shrink-0 h-7 min-w-0 max-w-40 rounded-md text-xs font-bold text-start'
               >
                 <span className='grow truncate'>{sub}</span>
               </Autocomplete.Trigger>
@@ -270,18 +318,13 @@ export default function SearchBar ({ className, sub }) {
                   ? (
                     <AutocompleteTiles>
                       <Autocomplete.Collection>
-                        {item => (
-                          <AutocompleteTile key={item.value} value={item} render={<Link href={item.value} />} onClick={onPick}>
-                            <span className='truncate text-sm font-bold'>{item.label}</span>
-                            <span className='text-xs text-muted'>{item.meta}</span>
-                          </AutocompleteTile>
-                        )}
+                        {item => <Tile key={item.value} item={item} onPick={onPick} />}
                       </Autocomplete.Collection>
                     </AutocompleteTiles>
                     )
                   : (
                     <Autocomplete.Collection>
-                      {item => <Row key={item.value} item={item} sub={sub} onPick={onPick} />}
+                      {item => <Row key={item.value} item={item} onPick={onPick} />}
                     </Autocomplete.Collection>
                     )}
               </Autocomplete.Group>

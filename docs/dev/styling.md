@@ -86,6 +86,11 @@ Popups render into `body` through portals by default. Menus can use a container
 from `MenuProvider`; sticky-bar menus use the bar so they follow its position and
 visibility.
 
+A popover or autocomplete popup that needs a different background or border color
+sets `--sn-popover-bg` or `--sn-popover-border-color` in its own module.
+Redeclaring `background-color` in a second module works only while that module
+loads after `popover.module.css`.
+
 Modules define appearance and transitions. Base UI handles focus, dismissal,
 keyboard navigation, and delayed unmounting where supported. Menu, popover, and
 tooltip components add the shared `motion` class from `popup-motion.module.css`

@@ -44,8 +44,8 @@
 }
 
 .popup {
-  background-color: var(--sn-input-bg);
-  border-color: var(--sn-border-color-translucent);
+  --sn-popover-bg: var(--sn-input-bg);
+  --sn-popover-border-color: var(--sn-border-color-translucent);
 }
 
 .footer {
@@ -57,17 +57,5 @@
   clip-path: polygon(0% 0%, 83% 0%, 100% 100%, 17% 100%);
   object-fit: cover;
 }
-
-/* the territory the page is in, at the left of the bar: no box of its own, the
-   chevron is the affordance, and the bar's focus ring covers it. sized like the
-   second bar's small select it replaced */
-   .scope {
-    height: calc(1.5em + .5rem + 2px);
-    padding: .25rem 0 .25rem .5rem;
-    background-color: transparent;
-    color: var(--sn-body-color);
-    font-size: .7875rem;
-    line-height: 1;
-  }
 
 }

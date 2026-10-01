@@ -7,7 +7,7 @@ import PreviewCard from './ui/preview-card'
 import { ItemSkeleton, ItemSummary } from './item'
 import { useCallback } from 'react'
 
-export default function ItemPreviewCard ({ id, children }) {
+export default function ItemPreviewCard ({ id, side, className, children }) {
   const [execute, { loading, data }] = useLazyQuery(ITEM, {
     fetchPolicy: 'cache-first'
   })
@@ -20,6 +20,8 @@ export default function ItemPreviewCard ({ id, children }) {
     <PreviewCard
       onShow={getItem}
       trigger={children}
+      side={side}
+      className={className}
       body={!data || loading
         ? <ItemSkeleton showUpvote={false} />
         : !data.item
