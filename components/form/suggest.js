@@ -10,7 +10,7 @@ import { InputInner } from './input'
 const INITIAL_SUGGESTIONS = { array: [], index: 0 }
 
 function BaseSuggest ({
-  query, onSelect, dropdownStyle,
+  query, onSelect,
   transformItem = item => item, selectWithTab = true, filterItems = () => true,
   getSuggestionsQuery, queryName, itemsField,
   children
@@ -87,12 +87,11 @@ function BaseSuggest ({
     ? `${listboxId}-${suggestions.index}`
     : undefined
 
-  // search passes dropdownStyle to position at the caret, otherwise we anchor to the wrapper after the input
   return (
     <>
       {children?.({ onKeyDown, resetSuggestions, listboxId, activeOptionId })}
       {suggestions.array.length > 0 && (
-        <div style={dropdownStyle} className={dropdownStyle ? undefined : 'relative'}>
+        <div className='relative'>
           <div
             id={listboxId}
             role='listbox'

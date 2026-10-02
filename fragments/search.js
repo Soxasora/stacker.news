@@ -24,15 +24,15 @@ export const NAV_SEARCH_POSTS = gql`
 // searchUsers because userSuggestions only returns names and we need stacked.
 // the include flags skip empty lookups, subSuggestions returns every territory for ''
 export const NAV_SEARCH_NAMES = gql`
-  query navSearchNames($userQ: String!, $withUsers: Boolean!, $subQ: String!, $withSubs: Boolean!, $limit: Limit) {
-    searchUsers(q: $userQ, limit: $limit) @include(if: $withUsers) {
+  query navSearchNames($q: String!, $withUsers: Boolean!, $withSubs: Boolean!, $limit: Limit) {
+    searchUsers(q: $q, limit: $limit) @include(if: $withUsers) {
       name
       photoId
       optional {
         stacked
       }
     }
-    subSuggestions(q: $subQ, limit: $limit) @include(if: $withSubs) {
+    subSuggestions(q: $q, limit: $limit) @include(if: $withSubs) {
       name
     }
   }

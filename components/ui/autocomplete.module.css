@@ -12,10 +12,6 @@
   background-color: var(--sn-toolbar-active);
 }
 
-.separator {
-  border-top: 1px solid var(--sn-toolbar-active);
-}
-
 .tile {
   border: 1px solid var(--sn-toolbar-active);
 }

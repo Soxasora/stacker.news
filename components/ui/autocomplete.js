@@ -28,26 +28,30 @@ export function AutocompleteGroupLabel ({ className, ...props }) {
   return <BaseAutocomplete.GroupLabel className={cn('px-3 pt-1.5 pb-0.5 text-xs text-muted font-bold', className)} {...props} />
 }
 
-export const autocompleteItemClasses = ({ className } = {}) =>
-  cn(styles.item, 'flex items-baseline gap-2 py-1 px-3 mx-1 mt-0.5 rounded-md', className)
-
-// label on the left, meta on the right
-export function AutocompleteItem ({ className, ...props }) {
-  return <BaseAutocomplete.Item className={autocompleteItemClasses({ className })} {...props} />
+// label on the left, meta on the right. action is a button for the end of the
+// row: a row can be a link, which can't have a button inside, so it goes next to it
+export function AutocompleteItem ({ className, action, ...props }) {
+  return (
+    <div role='presentation' className='relative mx-1 mt-0.5'>
+      <BaseAutocomplete.Item className={cn(styles.item, 'flex items-baseline gap-2 py-1 px-3 rounded-md', className)} {...props} />
+      {action}
+    </div>
+  )
 }
 
-// invisible: spacing only, no line
-export function AutocompleteSeparator ({ invisible, className, ...props }) {
-  return <BaseAutocomplete.Separator className={cn(!invisible && styles.separator, 'my-1.5', className)} {...props} />
-}
-
-// wrap a group's Collection to show its items as cards
+// wrap a group's Collection to show its items as cards. the columns come from className
 export function AutocompleteTiles ({ className, ...props }) {
-  return <div role='presentation' className={cn('grid grid-cols-1 md:grid-cols-4 gap-2 px-3 pt-0.5', className)} {...props} />
+  return <div role='presentation' className={cn('grid gap-2 px-3 pt-0.5', className)} {...props} />
 }
 
-export function AutocompleteTile ({ className, ...props }) {
-  return <BaseAutocomplete.Item className={cn(styles.item, styles.tile, 'flex flex-col gap-0.5 min-w-0 py-2.5 px-3 rounded-md', className)} {...props} />
+// a card. the padding is up to what's inside, action is the same as for AutocompleteItem
+export function AutocompleteTile ({ className, action, ...props }) {
+  return (
+    <div role='presentation' className='relative min-w-0'>
+      <BaseAutocomplete.Item className={cn(styles.item, styles.tile, 'flex flex-col min-w-0 h-full rounded-md', className)} {...props} />
+      {action}
+    </div>
+  )
 }
 
 // for the text inside Status and Empty. those are always rendered for screen

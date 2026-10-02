@@ -24,8 +24,7 @@ const DEFAULT_PREPEND_SUBS = []
 const DEFAULT_APPEND_SUBS = []
 const DEFAULT_FILTER_SUBS = () => true
 const SUB_SELECT_WIDTHS = {
-  small: 'w-24',
-  medium: 'w-52'
+  small: 'w-24'
 }
 
 export const subSelectClasses = ({ size, className } = {}) =>

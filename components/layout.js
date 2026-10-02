@@ -1,11 +1,11 @@
 import Navigation from './nav'
-import { SearchScopeProvider } from './nav/search-scope'
+import { SearchStateProvider } from './nav/search'
 import NavFooter from './nav/mobile/footer'
 import NavStatic from './nav/static'
 import Container from '@/components/ui/container'
 import Footer from './footer'
 import Seo, { SeoSearch } from './seo'
-import SearchFilters from './search'
+import SearchFilters from './search-filters'
 import styles from './layout.module.css'
 import PullToRefresh from './pull-to-refresh'
 
@@ -14,7 +14,7 @@ export default function Layout ({
   containClassName = '', seo = true, item, user, hideMobileNav = false, children
 }) {
   return (
-    <SearchScopeProvider sub={sub} user={user?.name}>
+    <SearchStateProvider sub={sub} user={user?.name}>
       {seo && <Seo sub={sub} item={item} user={user} />}
       <Navigation sub={sub} hideMobileNav={hideMobileNav} />
       {contain
@@ -26,7 +26,7 @@ export default function Layout ({
         : children}
       {footer && <Footer links={footerLinks} />}
       {!hideMobileNav && <NavFooter sub={sub} />}
-    </SearchScopeProvider>
+    </SearchStateProvider>
   )
 }
 

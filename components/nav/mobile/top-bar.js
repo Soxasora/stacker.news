@@ -2,6 +2,7 @@ import { Nav, Navbar } from '@/components/ui/nav'
 import styles from '../../header.module.css'
 import { Back, NavPrice, NavWalletSummary, SignUpButton, hasSorts } from '../common'
 import { MobileSearchBar } from '../search'
+import { isSearchPath } from '@/lib/search'
 import { useMe } from '@/components/me'
 import { useCommentsNavigatorContext, CommentsNavigator } from '@/components/use-comments-navigator'
 
@@ -21,7 +22,7 @@ export function MobilePriceRow () {
 export default function TopBar ({ path, pathname, topNavKey }) {
   // the search bar is on the pages that list a territory's items, where it's
   // also how you get to another territory, and on the search pages
-  const search = hasSorts({ path, pathname }) || pathname.endsWith('/search')
+  const showSearch = hasSorts({ path, pathname }) || isSearchPath(pathname)
 
   return (
     <Navbar className='not-last:pb-0'>
@@ -29,7 +30,7 @@ export default function TopBar ({ path, pathname, topNavKey }) {
         className={styles.navbarNav}
         activeKey={topNavKey}
       >
-        {search
+        {showSearch
           ? (
             <>
               <Back />

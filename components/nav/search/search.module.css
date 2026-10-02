@@ -27,10 +27,7 @@
   background-color: var(--sn-toolbar-active);
 }
 
-.clear {
-  color: var(--sn-grey);
-}
-
+.clear,
 .scope {
   color: var(--sn-grey);
 }
@@ -72,9 +69,9 @@
   padding-top: env(safe-area-inset-top);
 }
 
-/* the results of the full screen search go on behind the keyboard and the
-   browser's toolbar and fade out there. the padding lets the last ones scroll
-   back into view. --sn-keyboard-inset is set from search.js */
+/* the full screen results continue behind the keyboard and the browser's
+   toolbar and fade out there. the padding lets the last ones scroll into view.
+   mobile.js sets --sn-keyboard-inset */
 .results {
   --covered: max(var(--sn-keyboard-inset, 0px), env(safe-area-inset-bottom));
   padding-bottom: var(--covered);
@@ -95,11 +92,6 @@
 /* body-bg on mobile to fit the safe area color */
 .dialog .footer {
   background-color: var(--sn-body-bg);
-}
-
-.userimg {
-  clip-path: polygon(0% 0%, 83% 0%, 100% 100%, 17% 100%);
-  object-fit: cover;
 }
 
 }

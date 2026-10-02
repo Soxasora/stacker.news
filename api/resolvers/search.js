@@ -4,60 +4,10 @@ import { getItem, itemQueryWithMeta, SELECT } from './item'
 import { parse } from 'tldts'
 import { searchSchema, validateSchema } from '@/lib/validate'
 import { DEFAULT_POSTS_SATS_FILTER, DEFAULT_COMMENTS_SATS_FILTER, HOMEPAGE_POSTS_SATS_FILTER } from '@/lib/constants'
+import { queryParts } from '@/lib/search'
 import { resolveOpensearchModelId } from '../search/model-id'
 import removeMd from 'remove-markdown'
 import { Prisma } from '@prisma/client'
-
-const DOUBLE_QUOTE_VARIANTS = [
-  '\u201C', // left double quotation mark
-  '\u201D', // right double quotation mark
-  '\u201E', // double low-9 quotation mark
-  '\u201F', // double high-reversed-9 quotation mark
-  '\u00AB', // left-pointing double angle quotation mark
-  '\u00BB', // right-pointing double angle quotation mark
-  '\uFF02', // fullwidth quotation mark
-  '\u300C', // left corner bracket
-  '\u300D', // right corner bracket
-  '\u300E', // left white corner bracket
-  '\u300F', // right white corner bracket
-  '\u301D', // reversed double prime quotation mark
-  '\u301E', // double prime quotation mark
-  '\u301F' // low double prime quotation mark
-]
-
-const SMART_DOUBLE_QUOTES_REGEX = new RegExp(`[${DOUBLE_QUOTE_VARIANTS.join('')}]`, 'g')
-
-function phraseRegex () {
-  return /"([^"]*)"/gm
-}
-
-function normalizeSearchQuery (q = '') {
-  if (typeof q !== 'string') return ''
-  // Normalize common Unicode double-quote variants so phrase parsing can
-  // treat them all like ASCII double quotes.
-  return q.replace(SMART_DOUBLE_QUOTES_REGEX, '"')
-}
-
-function queryParts (q = '') {
-  const normalized = normalizeSearchQuery(q)
-  const quotes = [...normalized.matchAll(phraseRegex())]
-    .map(m => m[1])
-    .filter(quote => quote.trim().length > 0)
-  const queryArr = normalized.replace(phraseRegex(), ' ').trim().split(/\s+/).filter(Boolean)
-  const url = queryArr.find(word => word.startsWith('url:'))
-  const nym = queryArr.find(word => word.startsWith('@'))
-  const territory = queryArr.find(word => word.startsWith('~'))
-  const exclude = [url, nym, territory]
-  const query = queryArr.filter(word => !exclude.includes(word)).join(' ')
-
-  return {
-    quotes,
-    nym,
-    url,
-    territory,
-    query
-  }
-}
 
 function rebuildSearchSuggestion ({ suggestion, quotes = [], nym, territory, url }) {
   if (!suggestion) return null
@@ -188,12 +138,14 @@ async function loadSatsFilters (me, userLoader) {
 // Each returns { filters: [...], queries: [...] } for spreading into
 // the filter and termQuery arrays.
 
-// exactName is set when a stacker has exactly this nym
-function nymClauses (nym, exactName) {
+// @nym is the stacker with exactly that name when there is one, otherwise
+// every stacker whose name contains it
+async function nymClauses (nym, models) {
   if (!nym) return { filters: [], queries: [] }
-  if (exactName) return { filters: [{ term: { 'user.name': exactName } }], queries: [] }
   const name = nym.slice(1).toLowerCase()
   if (!name) return { filters: [], queries: [] } // guard: bare "@" with no name
+  const stacker = await models.user.findUnique({ where: { name }, select: { name: true } })
+  if (stacker) return { filters: [{ term: { 'user.name': stacker.name } }], queries: [] }
   const pattern = `*${name}*`
   // Strict author-only filter for @nym searches.
   // case_insensitive: keyword field stores original case; queries are lowercased
@@ -861,12 +813,7 @@ export default {
       const neuralText = [(spellCorrected || query), ...quotes].filter(Boolean).join(' ').trim().slice(0, MAX_NEURAL_TEXT_LENGTH)
 
       const { postsSatsFilter, commentsSatsFilter } = await loadSatsFilters(me, userLoader)
-      // @nym only matches that stacker when there is one with exactly that name,
-      // otherwise it matches every name that contains it
-      const stacker = nym?.length > 1
-        ? await models.user.findUnique({ where: { name: nym.slice(1) }, select: { name: true } })
-        : null
-      const nymParts = nymClauses(nym, stacker?.name)
+      const nymParts = await nymClauses(nym, models)
       const territoryParts = territoryClauses(territory)
       const quoteParts = quoteClauses(quotes)
 
